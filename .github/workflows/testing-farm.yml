@@ -1,0 +1,64 @@
+---
+name: Testing Farm Tests
+run-name: Run pcs dev-tests in Testing Farm 🚀
+on:
+  push:
+    branches:
+      linters-gh-action
+  pull_request:
+    types: [opened, synchronized, reopened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: write
+
+jobs:
+  tests-fedora:
+    runs-on: ubuntu-latest
+    # if: |
+    #   github.event_name == 'pull_request' ||
+    #   github.event_name == 'push' ||
+    #   (github.event.issue.pull_request &&
+    #     contains(github.event.comment.body, '[test]') &&
+    #     contains(fromJson('["OWNER", "MEMBER"]'), github.event.comment.author_association))
+    steps:
+      - run: echo "Git pull ref ${{ github.event.pull_request.head.ref }}"
+      - run: echo ${{ secrets.TEST_SECRET }}
+      - name: Run tests on Testing-Farm
+        uses: sclorg/testing-farm-as-github-action@v4
+        with:
+          api_key: ${{ secrets.TESTING_FARM_API_TOKEN }}
+          git_url: ${{ github.server_url }}/${{ github.repository }}
+          git_ref: ${{ github.ref }}
+          tmt_plan_regex: "linters|tier0"
+          compose: "Fedora-43"
+          tmt_context: distro=fedora-43
+          variables: COMPOSE_NAME=Fedora43
+          # pull_request_status_name: "Testing Farm - linters"
+          update_pull_request_status: true
+          create_issue_comment: true
+  tests-centos:
+    runs-on: ubuntu-latest
+    # if: |
+    #   github.event_name == 'pull_request' ||
+    #   github.event_name == 'push' ||
+    #   (github.event.issue.pull_request &&
+    #     contains(github.event.comment.body, '[test]'))
+    steps:
+      - run: echo ${{ secrets.TEST_SECRET }}
+      - name: Run tests on Testing-Farm
+        uses: sclorg/testing-farm-as-github-action@v4
+        with:
+          api_key: ${{ secrets.TESTING_FARM_API_TOKEN }}
+          git_url: ${{ github.server_url }}/${{ github.repository }}
+          git_ref: ${{ github.ref }}
+          tmt_plan_regex: "linters|tier0"
+          compose: "CentOS-Stream-10"
+          tmt_context: distro=rhel-10
+          variables: COMPOSE_NAME=CentOSStream10
+          # pull_request_status_name: "Testing Farm - tier0"
+          update_pull_request_status: true
+          create_issue_comment: true

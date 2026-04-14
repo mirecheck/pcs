@@ -25,10 +25,13 @@ prepare:
     how: shell
     script:
       - |
-        if dnf repolist --disabled -v |
-            grep "^Repo-id\s*:\s*rhel-HighAvailability$"; then
-          dnf config-manager --set-enabled rhel-HighAvailability
-        fi
+        for repo in rhel-HighAvailability \
+            highavailability; do
+          if dnf repolist --disabled -v |
+              grep "^Repo-id\s*:\s*${repo}$"; then
+            dnf config-manager --set-enabled "${repo}"
+          fi;
+        done
 
   - name: Install common packages required for pcs
     how: install
