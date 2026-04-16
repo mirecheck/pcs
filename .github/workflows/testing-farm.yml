@@ -17,6 +17,12 @@ permissions:
 jobs:
   linters:
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      (
+        github.event.issue.pull_request &&
+        contains(github.event.comment.body, '[test]')
+      )
     steps:
       - run: echo "Git pull ref ${{ github.event.pull_request.head.ref }}"
       - name: Run linters on Testing-Farm
@@ -34,6 +40,12 @@ jobs:
           create_issue_comment: true
   tier0:
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      (
+        github.event.issue.pull_request &&
+        contains(github.event.comment.body, '[test]')
+      )
     steps:
       - name: Run tier0 tests on Testing-Farm
         uses: sclorg/testing-farm-as-github-action@v4
