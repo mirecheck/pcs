@@ -1,7 +1,13 @@
 ---
 name: Testing Farm Tests
 run-name: Run pcs dev-tests in Testing Farm 🚀
-on: [push]
+on:
+  push:
+    branches:
+      linters-gh-action
+  issue_comment:
+    types: [created]
+
 
 permissions:
   contents: read
@@ -12,8 +18,6 @@ jobs:
   linters:
     runs-on: ubuntu-latest
     steps:
-      - name: DEBUG
-        run: pwd; ls -la
       - run: echo "Git pull ref ${{ github.event.pull_request.head.ref }}"
       - name: Run linters on Testing-Farm
         uses: sclorg/testing-farm-as-github-action@v4
@@ -31,10 +35,6 @@ jobs:
   tier0:
     runs-on: ubuntu-latest
     steps:
-      - name: DEBUG
-        run: |
-          pwd
-          ls -la
       - name: Run tier0 tests on Testing-Farm
         uses: sclorg/testing-farm-as-github-action@v4
         with:
