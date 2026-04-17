@@ -1,6 +1,5 @@
 ---
 name: Testing Farm Tests
-run-name: Run pcs dev-tests in Testing Farm 🚀
 on:
   push:
   pull_request:
@@ -26,15 +25,8 @@ jobs:
           - compose: "CentOS-Stream-10"
             tmt_context: distro=rhel-10
             compose_name: CentOSStream10
-    # if: |
-    #   github.event_name == 'pull_request' ||
-    #   github.event_name == 'push' ||
-    #   (github.event.issue.pull_request &&
-    #     contains(github.event.comment.body, '[test]') &&
-    #     contains(fromJson('["OWNER", "MEMBER"]'), github.event.comment.author_association))
     steps:
-      - run: echo "Git pull ref ${{ github.event.pull_request.head.ref }}"
-      - run: echo ${{ secrets.TEST_SECRET }}
+      - run: echo "GitHub Event Name ${{ github.event_name }}"
       - name: Run tests on Testing-Farm
         uses: sclorg/testing-farm-as-github-action@v4
         with:
@@ -48,8 +40,3 @@ jobs:
           pull_request_status_name: ${{ matrix.compose }}
           update_pull_request_status: true
           create_issue_comment: true
-    # if: |
-    #   github.event_name == 'pull_request' ||
-    #   github.event_name == 'push' ||
-    #   (github.event.issue.pull_request &&
-    #     contains(github.event.comment.body, '[test]'))
