@@ -3,10 +3,9 @@ name: Testing Farm Tests
 run-name: Run pcs dev-tests in Testing Farm 🚀
 on:
   push:
-    branches:
-      linters-gh-action
   pull_request:
     types: [opened, synchronized, reopened]
+  pull_request_target:
   issue_comment:
     types: [created]
 
@@ -46,7 +45,7 @@ jobs:
           compose: ${{ matrix.compose }}
           tmt_context: ${{ matrix.tmt_context }}
           variables: COMPOSE_NAME=${{ matrix.compose_name }}
-          # pull_request_status_name: "Testing Farm - linters"
+          pull_request_status_name: ${{ matrix.compose }}
           update_pull_request_status: true
           create_issue_comment: true
     # if: |
