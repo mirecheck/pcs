@@ -1,0 +1,58 @@
+---
+name: Testing Farm Tests
+on:
+  push:
+  pull_request:
+    types: [opened, synchronized, reopened]
+  pull_request_target:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  statuses: write
+
+jobs:
+  tf-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - compose: "Fedora-43"
+            tmt_plan_regex: "linters|tier0|tier1"
+            tmt_context: distro=fedora-43
+            variables: COMPOSE_NAME=Fedora43
+          - compose: "CentOS-Stream-10"
+            tmt_plan_regex: "linters|tier0"
+            tmt_context: distro=centos-stream-10
+            variables: COMPOSE_NAME=CentOSStream10
+    if: |
+      github.repository == 'mirecheck/pcs' &&
+      (github.event_name != 'issue_comment' ||
+        (github.event.issue.pull_request &&
+          contains(
+            github.event.comment.body,
+            '[tftests]'
+          ) &&
+          contains(
+            fromJson('["OWNER", "MEMBER"]'),
+            github.event.comment.author_association
+          )))
+    steps:
+      - run: echo "Git pull ref ${{ github.event.pull_request.head.ref }}"
+      - run: echo ${{ secrets.TEST_SECRET }}
+      - run: echo ${{ github.event.comment.author_association }}
+      - name: Run tests on Testing-Farm
+        uses: sclorg/testing-farm-as-github-action@v4
+        with:
+          api_key: ${{ secrets.TESTING_FARM_API_TOKEN }}
+          git_url: ${{ github.server_url }}/${{ github.repository }}
+          git_ref: ${{ github.ref }}
+          tmt_plan_regex: ${{ matrix.tmt_plan_regex }}
+          compose: ${{ matrix.compose }}
+          tmt_context: ${{ matrix.tmt_context }}
+          variables: ${{ matrix.variables }}
+          pull_request_status_name: ${{ matrix.compose }}
+          update_pull_request_status: true
+          create_issue_comment: true
