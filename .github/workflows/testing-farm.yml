@@ -14,19 +14,61 @@ permissions:
   statuses: write
 
 jobs:
+  setup-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-matrix
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          USE_PCS_011=false
+
+          case "${{ github.event_name }}" in
+            push)
+              REF="${{ github.ref }}"
+              if [[ "$REF" == refs/heads/pcs-0.11_* ]]; then
+                USE_PCS_011=true
+              fi
+              ;;
+            pull_request|pull_request_target)
+              BASE="${{ github.event.pull_request.base.ref }}"
+              if [[ "$BASE" == "pcs-0.11" ]]; then
+                USE_PCS_011=true
+              fi
+              ;;
+            issue_comment)
+              REPO="${{ github.repository }}"
+              PR="${{ github.event.issue.number }}"
+              BASE_REF=$(
+                gh api \
+                  "repos/${REPO}/pulls/${PR}" \
+                  --jq '.base.ref' \
+                  2>/dev/null || echo ""
+              )
+              if [[ "$BASE_REF" == "pcs-0.11" ]]; then
+                USE_PCS_011=true
+              fi
+              ;;
+          esac
+
+          if [[ "$USE_PCS_011" == "true" ]]; then
+            MATRIX=".github/matrices/tf-pcs-0.11.json"
+          else
+            MATRIX=".github/matrices/tf-main.json"
+          fi
+
+          echo "matrix=$(jq -c . "$MATRIX")" \
+            >> "$GITHUB_OUTPUT"
+
   tf-tests:
+    needs: setup-matrix
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        include:
-          - compose: "Fedora-43"
-            tmt_plan_regex: "linters|tier0|tier1"
-            tmt_context: distro=fedora-43
-            variables: COMPOSE_NAME=Fedora43
-          - compose: "CentOS-Stream-10"
-            tmt_plan_regex: "linters|tier0"
-            tmt_context: distro=centos-stream-10
-            variables: COMPOSE_NAME=CentOSStream10
+      fail-fast: false
+      matrix: ${{ fromJson(needs.setup-matrix.outputs.matrix) }}
     if: |
       github.repository == 'mirecheck/pcs' &&
       (github.event_name != 'issue_comment' ||
@@ -41,7 +83,6 @@ jobs:
           )))
     steps:
       - run: echo "Git pull ref ${{ github.event.pull_request.head.ref }}"
-      - run: echo ${{ secrets.TEST_SECRET }}
       - run: echo ${{ github.event.comment.author_association }}
       - name: Run tests on Testing-Farm
         uses: sclorg/testing-farm-as-github-action@v4
