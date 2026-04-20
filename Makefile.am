@@ -3,6 +3,8 @@ EXTRA_DIST		= \
 			  CHANGELOG.md \
 			  CONTRIBUTING.md \
 			  dev_requirements.txt \
+			  .github/matrices/tf-main.json \
+			  .github/matrices/tf-pcs-0.11.json \
 			  .github/workflows/testing-farm.yml \
 			  .gitlab-ci.yml \
 			  make/gitlog-to-changelog \

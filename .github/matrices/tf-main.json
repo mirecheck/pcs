@@ -1,0 +1,16 @@
+{
+  "include": [
+    {
+      "compose": "Fedora-43",
+      "tmt_plan_regex": "linters|tier0|tier1",
+      "tmt_context": "distro=fedora-43",
+      "variables": "COMPOSE_NAME=Fedora43"
+    },
+    {
+      "compose": "CentOS-Stream-10",
+      "tmt_plan_regex": "linters|tier0|tier1",
+      "tmt_context": "distro=centos-stream-10",
+      "variables": "COMPOSE_NAME=CentOSStream10"
+    }
+  ]
+}
