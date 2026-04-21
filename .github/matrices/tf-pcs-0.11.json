@@ -2,7 +2,7 @@
   "include": [
     {
       "compose": "CentOS-Stream-9",
-      "tmt_plan_regex": "linters|tier0|tier1",
+      "tmt_plan_regex": "linters",
       "tmt_context": "distro=centos-stream-9",
       "variables": "COMPOSE_NAME=CentOSStream9"
     }

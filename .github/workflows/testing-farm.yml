@@ -4,7 +4,6 @@ on:
   push:
   pull_request:
     types: [opened, synchronized, reopened]
-  pull_request_target:
   issue_comment:
     types: [created]
 
@@ -15,9 +14,12 @@ permissions:
 
 jobs:
   setup-matrix:
+    if: github.repository == 'ClusterLabs/pcs' || vars.ALLOW_FORK_REPO != ''
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      git_ref: ${{ steps.set-matrix.outputs.git_ref }}
+      same_repo: ${{ steps.set-matrix.outputs.same_repo }}
     steps:
       - uses: actions/checkout@v4
       - id: set-matrix
@@ -25,31 +27,46 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           USE_PCS_011=false
+          GIT_REF="${{ github.ref }}"
+          SAME_REPO=false
+          REPO="${{ github.repository }}"
 
           case "${{ github.event_name }}" in
             push)
               REF="${{ github.ref }}"
+              SAME_REPO=true
               if [[ "$REF" == refs/heads/pcs-0.11_* ]]; then
                 USE_PCS_011=true
               fi
               ;;
-            pull_request|pull_request_target)
+            pull_request)
               BASE="${{ github.event.pull_request.base.ref }}"
               if [[ "$BASE" == "pcs-0.11" ]]; then
                 USE_PCS_011=true
               fi
+              HEAD_REPO="${{ github.event.pull_request.head.repo.full_name }}"
+              if [[ "$HEAD_REPO" == "$REPO" ]]; then
+                SAME_REPO=true
+              fi
               ;;
             issue_comment)
-              REPO="${{ github.repository }}"
               PR="${{ github.event.issue.number }}"
-              BASE_REF=$(
+              PR_JSON=$(
                 gh api \
                   "repos/${REPO}/pulls/${PR}" \
-                  --jq '.base.ref' \
-                  2>/dev/null || echo ""
+                  2>/dev/null || echo "{}"
               )
+              BASE_REF=$(echo "$PR_JSON" | jq -r '.base.ref // ""')
+              GIT_REF=$(echo "$PR_JSON" | jq -r '.head.ref // ""')
+              HEAD_REPO=$(echo "$PR_JSON" | jq -r '.head.repo.full_name // ""')
               if [[ "$BASE_REF" == "pcs-0.11" ]]; then
                 USE_PCS_011=true
+              fi
+              if [[ -z "$GIT_REF" ]]; then
+                GIT_REF="${{ github.ref }}"
+              fi
+              if [[ "$HEAD_REPO" == "$REPO" ]]; then
+                SAME_REPO=true
               fi
               ;;
           esac
@@ -62,6 +79,8 @@ jobs:
 
           echo "matrix=$(jq -c . "$MATRIX")" \
             >> "$GITHUB_OUTPUT"
+          echo "git_ref=${GIT_REF}" >> "$GITHUB_OUTPUT"
+          echo "same_repo=${SAME_REPO}" >> "$GITHUB_OUTPUT"
 
   tf-tests:
     needs: setup-matrix
@@ -70,30 +89,31 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup-matrix.outputs.matrix) }}
     if: |
-      github.repository == 'mirecheck/pcs' &&
-      (github.event_name != 'issue_comment' ||
-        (github.event.issue.pull_request &&
-          contains(
-            github.event.comment.body,
-            '[tftests]'
-          ) &&
-          contains(
-            fromJson('["OWNER", "MEMBER"]'),
-            github.event.comment.author_association
-          )))
+      github.event_name != 'issue_comment' ||
+      (github.event.issue.pull_request &&
+        contains(
+          github.event.comment.body,
+          '[tftests]'
+        ) &&
+        contains(
+          fromJson('["OWNER", "MEMBER"]'),
+          github.event.comment.author_association
+        ))
     steps:
-      - run: echo "Git pull ref ${{ github.event.pull_request.head.ref }}"
-      - run: echo ${{ github.event.comment.author_association }}
+      - run: echo "github event - ${{ github.event_name }}"
+      - run: echo "github ref - ${{ github.ref }}"
+      - run: echo "github pull ref ${{ github.event.pull_request.head.ref }}"
+      - run: echo "github comment author association ${{ github.event.comment.author_association }}"
       - name: Run tests on Testing-Farm
         uses: sclorg/testing-farm-as-github-action@v4
         with:
           api_key: ${{ secrets.TESTING_FARM_API_TOKEN }}
           git_url: ${{ github.server_url }}/${{ github.repository }}
-          git_ref: ${{ github.ref }}
+          git_ref: ${{ needs.setup-matrix.outputs.git_ref }}
           tmt_plan_regex: ${{ matrix.tmt_plan_regex }}
           compose: ${{ matrix.compose }}
           tmt_context: ${{ matrix.tmt_context }}
           variables: ${{ matrix.variables }}
           pull_request_status_name: ${{ matrix.compose }}
-          update_pull_request_status: true
-          create_issue_comment: true
+          update_pull_request_status: ${{ needs.setup-matrix.outputs.same_repo }}
+          create_issue_comment: ${{ needs.setup-matrix.outputs.same_repo }}
