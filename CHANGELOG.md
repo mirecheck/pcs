@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Added
+- This is not getting merged either
 - No way this is getting merged :D
 - Commands `pcs cluster node rename-corosync` and `pcs cluster node rename-cib`
   for cluster node renaming ([RHEL-149172])
