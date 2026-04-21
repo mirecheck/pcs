@@ -1,9 +1,10 @@
 ---
+
 name: Testing Farm Tests
 on:
   push:
   pull_request:
-    types: [opened, synchronized, reopened]
+    types: [opened, synchronize, reopened]
   issue_comment:
     types: [created]
 
@@ -13,13 +14,16 @@ permissions:
   statuses: write
 
 jobs:
+  # To run this workflow in your fork, set these variables:
+  #   * vars.ALLOW_FORK_REPO=true
+  #   * secrets.TESTING_FARM_API_TOKEN=<your_personal_token>
   setup-matrix:
     if: github.repository == 'ClusterLabs/pcs' || vars.ALLOW_FORK_REPO != ''
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       git_ref: ${{ steps.set-matrix.outputs.git_ref }}
-      same_repo: ${{ steps.set-matrix.outputs.same_repo }}
+      allow_update: ${{ steps.set-matrix.outputs.allow_update }}
     steps:
       - uses: actions/checkout@v4
       - id: set-matrix
@@ -28,13 +32,12 @@ jobs:
         run: |
           USE_PCS_011=false
           GIT_REF="${{ github.ref }}"
-          SAME_REPO=false
           REPO="${{ github.repository }}"
+          ALLOW_UPDATE=true
 
           case "${{ github.event_name }}" in
             push)
               REF="${{ github.ref }}"
-              SAME_REPO=true
               if [[ "$REF" == refs/heads/pcs-0.11_* ]]; then
                 USE_PCS_011=true
               fi
@@ -45,8 +48,8 @@ jobs:
                 USE_PCS_011=true
               fi
               HEAD_REPO="${{ github.event.pull_request.head.repo.full_name }}"
-              if [[ "$HEAD_REPO" == "$REPO" ]]; then
-                SAME_REPO=true
+              if [[ "$HEAD_REPO" != "$REPO" ]]; then
+                ALLOW_UPDATE=false
               fi
               ;;
             issue_comment)
@@ -57,16 +60,9 @@ jobs:
                   2>/dev/null || echo "{}"
               )
               BASE_REF=$(echo "$PR_JSON" | jq -r '.base.ref // ""')
-              GIT_REF=$(echo "$PR_JSON" | jq -r '.head.ref // ""')
-              HEAD_REPO=$(echo "$PR_JSON" | jq -r '.head.repo.full_name // ""')
+              GIT_REF="refs/pull/${PR}/head"
               if [[ "$BASE_REF" == "pcs-0.11" ]]; then
                 USE_PCS_011=true
-              fi
-              if [[ -z "$GIT_REF" ]]; then
-                GIT_REF="${{ github.ref }}"
-              fi
-              if [[ "$HEAD_REPO" == "$REPO" ]]; then
-                SAME_REPO=true
               fi
               ;;
           esac
@@ -80,7 +76,7 @@ jobs:
           echo "matrix=$(jq -c . "$MATRIX")" \
             >> "$GITHUB_OUTPUT"
           echo "git_ref=${GIT_REF}" >> "$GITHUB_OUTPUT"
-          echo "same_repo=${SAME_REPO}" >> "$GITHUB_OUTPUT"
+          echo "allow_update=${ALLOW_UPDATE}" >> "$GITHUB_OUTPUT"
 
   tf-tests:
     needs: setup-matrix
@@ -115,5 +111,5 @@ jobs:
           tmt_context: ${{ matrix.tmt_context }}
           variables: ${{ matrix.variables }}
           pull_request_status_name: ${{ matrix.compose }}
-          update_pull_request_status: ${{ needs.setup-matrix.outputs.same_repo }}
-          create_issue_comment: ${{ needs.setup-matrix.outputs.same_repo }}
+          update_pull_request_status: ${{ needs.setup-matrix.outputs.allow_update }}
+          create_issue_comment: ${{ needs.setup-matrix.outputs.allow_update }}
