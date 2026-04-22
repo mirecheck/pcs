@@ -44,13 +44,37 @@ jobs:
   #   * vars.ALLOW_FORK_REPO=true
   #   * secrets.TESTING_FARM_API_TOKEN=<your_personal_token>
   setup-matrix:
-    if: github.repository == 'ClusterLabs/pcs' || vars.ALLOW_FORK_REPO != ''
+    # (github.repository == 'ClusterLabs/pcs' ||
+    #  vars.ALLOW_FORK_REPO != '') &&
+    if: |
+      (github.event_name != 'issue_comment' ||
+        (github.event.issue.pull_request &&
+          contains(
+            github.event.comment.body,
+            '[tf-tests'
+          ) &&
+          contains(
+            fromJson('["OWNER", "MEMBER"]'),
+            github.event.comment.author_association
+          )))
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       git_ref: ${{ steps.set-matrix.outputs.git_ref }}
       allow_update: ${{ steps.set-matrix.outputs.allow_update }}
+      custom_tmt_plan_regex: ${{ steps.parse-comment.outputs.custom_tmt_plan_regex }}
     steps:
+      - name: Parse custom tmt plan regex from comment
+        id: parse-comment
+        if: github.event_name == 'issue_comment'
+        run: |
+          COMMENT="${{ github.event.comment.body }}"
+          CUSTOM_REGEX=$(
+            echo "$COMMENT" \
+              | grep -oP '\[tf-tests:\K[^\]]+' \
+              || echo ""
+          )
+          echo "custom_tmt_plan_regex=${CUSTOM_REGEX}" >> "$GITHUB_OUTPUT"
       - id: set-matrix
         env:
           GH_TOKEN: ${{ github.token }}
@@ -124,45 +148,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup-matrix.outputs.matrix) }}
-    if: |
-      github.event_name != 'issue_comment' ||
-      (github.event.issue.pull_request &&
-        contains(
-          github.event.comment.body,
-          '[tftests'
-        ) &&
-        contains(
-          fromJson('["OWNER", "MEMBER"]'),
-          github.event.comment.author_association
-        ))
+    env:
+      TMT_PLAN_REGEX: ${{ needs.setup-matrix.outputs.custom_tmt_plan_regex || inputs.custom_tmt_plan_regex || matrix.tmt_plan_regex }}
     steps:
-      - run: echo "github event - ${{ github.event_name }}"
-      - run: echo "github ref - ${{ github.ref }}"
-      - run: echo "github pr base ref ${{ github.event.pull_request.base.ref }}"
-      - run: echo "github pull ref ${{ github.event.pull_request.head.ref }}"
-      - run: echo "github comment author association ${{ github.event.comment.author_association }}"
-      - name: Parse custom tmt plan regex from comment
-        id: parse-comment
-        if: github.event_name == 'issue_comment'
-        run: |
-          COMMENT="${{ github.event.comment.body }}"
-          CUSTOM_REGEX=$(
-            echo "$COMMENT" \
-              | grep -oP '\[tftests:\K[^\]]+' \
-              || echo ""
-          )
-          echo "custom_tmt_plan_regex=${CUSTOM_REGEX}" \
-            >> "$GITHUB_OUTPUT"
       - name: Run tests on Testing-Farm
         uses: sclorg/testing-farm-as-github-action@v4
         with:
           api_key: ${{ secrets.TESTING_FARM_API_TOKEN }}
           git_url: ${{ github.server_url }}/${{ github.repository }}
           git_ref: ${{ needs.setup-matrix.outputs.git_ref }}
-          tmt_plan_regex: ${{ steps.parse-comment.outputs.custom_tmt_plan_regex || inputs.custom_tmt_plan_regex || matrix.tmt_plan_regex }}
+          tmt_plan_regex: ${{ env.TMT_PLAN_REGEX }}
           compose: ${{ matrix.compose }}
           tmt_context: ${{ matrix.tmt_context }}
           variables: ${{ matrix.variables }}
-          pull_request_status_name: ${{ matrix.compose }}
+          pull_request_status_name: ${{ env.TMT_PLAN_REGEX }}
           update_pull_request_status: ${{ needs.setup-matrix.outputs.allow_update }}
           create_issue_comment: ${{ needs.setup-matrix.outputs.allow_update }}
