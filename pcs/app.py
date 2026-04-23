@@ -123,6 +123,7 @@ def main(argv=None):  # noqa: PLR0912, PLR0915
     # pylint: disable=too-many-branches
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-statements
+    print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
     if completion.has_applicable_environment(os.environ):
         print(
             completion.make_suggestions(
