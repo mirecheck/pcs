@@ -79,6 +79,8 @@ jobs:
       allow_update: ${{ steps.set-matrix.outputs.allow_update }}
       custom_tmt_plan_regex: ${{ steps.parse-comment.outputs.custom_tmt_plan_regex }}
     steps:
+      - run: echo "full_name ${{ github.event.pull_request.head.repo.full_name }}"
+      - run: echo "repository ${{ github.repository }}"
       - name: Parse custom tmt plan regex from comment
         id: parse-comment
         if: github.event_name == 'issue_comment'
@@ -108,7 +110,7 @@ jobs:
               ;;
             pull_request)
               BASE_REF="${{ github.event.pull_request.base.ref }}"
-              if [[ "$BASE_REF" == "pcs-0.11"  ]]; then
+              if [[ "$BASE_REF" == "pcs-0.11" ]]; then
                 USE_PCS_011=true
               fi
               HEAD_REPO="${{ github.event.pull_request.head.repo.full_name }}"
@@ -118,10 +120,11 @@ jobs:
               ;;
             pull_request_target)
               BASE_REF="${{ github.event.pull_request.base.ref }}"
-              if [[ "$BASE_REF" == "pcs-0.11"  ]]; then
+              if [[ "$BASE_REF" == "pcs-0.11" ]]; then
                 USE_PCS_011=true
               fi
               GIT_REF="refs/pull/${{ github.event.pull_request.number }}/head"
+              ;;
             issue_comment)
               PR="${{ github.event.issue.number }}"
               PR_JSON=$(
