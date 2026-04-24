@@ -10,6 +10,7 @@ daemon, which operates as a remote server for pcs.
   * This is where pcs-0.12 lives.
   * Clusters running Pacemaker 3.x on top of Corosync 3.x are supported.
   * The main development happens here.
+* pcs-0.0000000000
 * pcs-0.11
   * Clusters running Pacemaker 2.1 on top of Corosync 3.x are supported.
   * This branch is in maintenance mode - bugs are being fixed but only a subset
