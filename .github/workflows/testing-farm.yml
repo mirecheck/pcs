@@ -5,6 +5,10 @@ on:
   # Run workflow manually from the GitHub UI
   workflow_dispatch:
     inputs:
+      pr_number:
+        description: 'PR number to test (uses refs/pull/<number>/head)'
+        type: string
+        default: ''
       custom_tmt_plan_regex:
         description: 'Custom tmt plan regex'
         type: choice
@@ -104,7 +108,16 @@ jobs:
           EVENT_NAME="${{ github.event_name }}"
 
           case "$EVENT_NAME" in
-            push|workflow_dispatch)
+            push)
+              if [[ "$GIT_REF" == refs/heads/pcs-0.11_* ]]; then
+                USE_PCS_011=true
+              fi
+              ;;
+            workflow_dispatch)
+              PR_NUMBER="${{ inputs.pr_number }}"
+              if [[ -n "$PR_NUMBER" ]]; then
+                GIT_REF="refs/pull/${PR_NUMBER}/head"
+              fi
               if [[ "$GIT_REF" == refs/heads/pcs-0.11_* ]]; then
                 USE_PCS_011=true
               fi
