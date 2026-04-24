@@ -161,6 +161,27 @@ jobs:
           compose: ${{ matrix.compose }}
           tmt_context: ${{ matrix.tmt_context }}
           variables: ${{ matrix.variables }}
-          pull_request_status_name: ${{ env.TMT_PLAN_REGEX }}
+          pull_request_status_name: ${{ matrix.compose }}
           update_pull_request_status: ${{ needs.setup-matrix.outputs.allow_update }}
           create_issue_comment: ${{ needs.setup-matrix.outputs.allow_update }}
+
+  # Required check that always runs
+  testing-farm-required:
+    if: always()
+    needs: tf-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify tf-tests ran
+        run: |
+          result="${{ needs.tf-tests.result }}"
+
+          if [ "$result" == "success" ]; then
+            echo "✅ Tests passed"
+            exit 0
+          elif [ "$result" == "skipped" ]; then
+            echo "❌ Tests were skipped - blocking merge"
+            exit 1
+          else
+            echo "❌ Tests failed with status: $result"
+            exit 1
+          fi
