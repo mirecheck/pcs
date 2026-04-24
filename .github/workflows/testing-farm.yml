@@ -21,6 +21,16 @@ on:
   # uncomment for testing
   # push:
 
+  # WARNING: pull_request_target requires GitHub Environment with approval!
+  # Setup: Settings → Environments → Create "testing-farm-approval" with required reviewers
+  # Without this, fork PRs can access secrets unsafely.
+  # See:
+  # - https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#understanding-the-risk-of-script-injections
+  # - https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment
+  # - https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
   # Run workflow for PRs from users with write privileges
   pull_request:
     types: [opened, synchronize, reopened]
@@ -45,8 +55,10 @@ jobs:
   #   * secrets.TESTING_FARM_API_TOKEN=<your_personal_token>
   setup-matrix:
     if: |
-      (github.repository == 'ClusterLabs/pcs' ||
-       vars.ALLOW_FORK_REPO != '') &&
+      (github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository) ||
+      (github.event_name == 'pull_request_target' &&
+        github.event.pull_request.head.repo.full_name != github.repository) ||
       (github.event_name != 'issue_comment' ||
         (github.event.issue.pull_request &&
           contains(
@@ -57,6 +69,11 @@ jobs:
             fromJson('["OWNER", "MEMBER"]'),
             github.event.comment.author_association
           )))
+
+    # Only use environment for pull_request_target
+    environment: ${{
+      github.event_name == 'pull_request_target' && 'testing-farm-approval' || ''
+    }}
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -83,20 +100,24 @@ jobs:
           GIT_REF="${{ github.ref }}"
           REPO="${{ github.repository }}"
           ALLOW_UPDATE=true
+          EVENT_NAME="${{ github.event_name }}"
 
-          case "${{ github.event_name }}" in
+          case "$EVENT_NAME" in
             push|workflow_dispatch)
               if [[ "$GIT_REF" == refs/heads/pcs-0.11_* ]]; then
                 USE_PCS_011=true
               fi
               ;;
-            pull_request)
+            pull_request|pull_request_target)
               BASE_REF="${{ github.event.pull_request.base.ref }}"
-              if [[ "$BASE_REF" == "pcs-0.11" ]]; then
+              if [[ "$BASE_REF" == "pcs-0.11"  ]]; then
                 USE_PCS_011=true
               fi
+              if [[ "$EVENT_NAME" == "pull_request_target" ]]; then
+                GIT_REF="${{ github.event.pull_request.head.ref }}"
+              fi
               HEAD_REPO="${{ github.event.pull_request.head.repo.full_name }}"
-              if [[ "$HEAD_REPO" != "$REPO" ]]; then
+              if [[ "$HEAD_REPO" != "$REPO" && "$EVENT_NAME" == pull_request ]]; then
                 ALLOW_UPDATE=false
               fi
               ;;
