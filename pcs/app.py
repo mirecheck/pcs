@@ -32,7 +32,7 @@ from pcs.common import capabilities
 from pcs.lib.errors import LibraryError
 
 
-def _non_root_run(argv_cmd):  # noqa: PLR0912 Too many branches
+def _non_root_run(argv_cmd):
     """
     This function will run commands which has to be run as root for users which
     are not root. If it required to run such command as root it will do that by
