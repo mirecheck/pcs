@@ -37,8 +37,8 @@ from pcs.cli.routing import (
     quorum,
     resource,
     status,
-    stonith,
     tag,
+    stonith,
 )
 from pcs.common import capabilities
 from pcs.lib.errors import LibraryError
