@@ -39,6 +39,8 @@ on:
   pull_request_target:
     types: [opened, synchronize, reopened]
 
+  push:
+
   # Allow triggering workflow via PR comment for PRs from forks;
   # runs with the privileges of the comment author
   issue_comment:
@@ -208,7 +210,6 @@ jobs:
           create_issue_comment: ${{ needs.setup-matrix.outputs.allow_update }}
 
   new-workflow-job:
-    needs: setup-matrix
     runs-on: ubuntu-latest
     steps:
       - name: Run tests on Testing-Farm
