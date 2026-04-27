@@ -30,11 +30,11 @@ on:
   # NOTE: Use pull_request_target to allow secret access for PRs from forks.
   # WARNING: pull_request_target requires GitHub Environment with approval!
   # Setup: Settings -> Environments -> Create:
-  #   * "testing-farm-approval" with required reviewers
-  #   * "testing-farm-auto" without any protection rules
-  #   * Only after creating these environments, set the repository secret
-  #     TESTING_FARM_API_KEY: Settings -> Secrets and variables -> Actions ->
-  #     New repository secret
+  #   * "testing-farm-approval"
+  #     * set up required reviewers
+  #   * "testing-farm-apikey"
+  #     * set environment secret TESTING_FARM_API_KEY
+  #     * set the main branch under "Deployment branches and tags"
   # Without this, fork PRs can access secrets unsafely.
   # See:
   # - https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#understanding-the-risk-of-script-injections
@@ -70,16 +70,24 @@ jobs:
         ))
 
     # Environments:
-    #   * testing-farm-approval - needs approval for fork PRs
-    #   * testing-farm-auto - no approval for members
+    #   * testing-farm-approval - needs approval (used for fork PRs)
+    #   * testing-farm-apikey - no approval (used for members)
     environment: >-
       ${{
-        github.event_name == 'pull_request_target'
+        github.event_name == 'workflow_dispatch'
+        && 'testing-farm-apikey'
+        || github.event_name == 'pull_request_target'
         && contains(
           fromJson('["OWNER", "MEMBER"]'),
           github.event.pull_request.author_association
         )
-        && 'testing-farm-auto'
+        && 'testing-farm-apikey'
+        || github.event_name == 'issue_comment'
+        && contains(
+          fromJson('["OWNER", "MEMBER"]'),
+          github.event.comment.author_association
+        )
+        && 'testing-farm-apikey'
         || 'testing-farm-approval'
       }}
     runs-on: ubuntu-latest
@@ -111,11 +119,6 @@ jobs:
           ALLOW_UPDATE=true
 
           case "${{ github.event_name }}" in
-            push)
-              if [[ "$GIT_REF" == refs/heads/pcs-0.11_* ]]; then
-                USE_PCS_011=true
-              fi
-              ;;
             workflow_dispatch)
               BRANCH="${{ inputs.branch }}"
               if [[ -n "$BRANCH" ]]; then
@@ -189,7 +192,10 @@ jobs:
           echo "allow_update=${ALLOW_UPDATE}" >> "$GITHUB_OUTPUT"
 
   tf-tests:
+    # The setup-matrix job may block and require approval if
+    # 'testing-farm-approval' environment is used
     needs: setup-matrix
+    environment: 'testing-farm-apikey'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
