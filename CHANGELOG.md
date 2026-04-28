@@ -4,6 +4,7 @@
 ### Added
 - Commands `pcs cluster node rename-corosync` and `pcs cluster node rename-cib`
   for cluster node renaming ([RHEL-149172])
+- just for testing PR
 
 [RHEL-149172]: https://redhat.atlassian.net/browse/RHEL-149172
 
