@@ -162,6 +162,7 @@ class LibraryEnvironment:
         self,
         minimal_version: Optional[Version] = None,
         nice_to_have_version: Optional[Version] = None,
+        linter_error: Any = None,
     ) -> _Element:
         if self.__loaded_cib_diff_source is not None:
             raise AssertionError("CIB has already been loaded")
