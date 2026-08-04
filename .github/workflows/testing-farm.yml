@@ -74,6 +74,8 @@ on:
         default: 'main'
         options:
           - 'main'
+          - 'pcs-1.x'
+          - 'pcs-0.12'
           - 'pcs-0.11'
       custom_tmt_plan_regex:
         description: 'Custom tmt plan regex'
@@ -212,7 +214,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
-          USE_PCS_011=false
+          TARGET_BRANCH="main"
           GIT_REF="${GIT_REF_INPUT}"
 
           get_pr_base_ref() {
@@ -244,33 +246,39 @@ jobs:
               fi
               if [[ -n "$INPUT_PR_NUMBER" ]]; then
                 GIT_REF="refs/pull/${INPUT_PR_NUMBER}/head"
-                BASE_REF=$(get_pr_base_ref "$INPUT_PR_NUMBER")
-                if [[ "$BASE_REF" == "pcs-0.11" ]]; then
-                  USE_PCS_011=true
-                fi
+                TARGET_BRANCH=$(get_pr_base_ref "$INPUT_PR_NUMBER")
               else
                 GIT_REF="refs/heads/${INPUT_BRANCH}"
-                if [[ "$INPUT_TARGET_BRANCH" == "pcs-0.11" ]]; then
-                  USE_PCS_011=true
-                fi
+                TARGET_BRANCH="$INPUT_TARGET_BRANCH"
               fi
               ;;
             pull_request_target)
-              if [[ "$PR_BASE_REF" == "pcs-0.11" ]]; then
-                USE_PCS_011=true
-              fi
+              TARGET_BRANCH="$PR_BASE_REF"
               GIT_REF="refs/pull/${PR_NUMBER}/head"
               ;;
             issue_comment)
-              BASE_REF=$(get_pr_base_ref "$ISSUE_NUMBER")
+              TARGET_BRANCH=$(get_pr_base_ref "$ISSUE_NUMBER")
               GIT_REF="refs/pull/${ISSUE_NUMBER}/head"
-              if [[ "$BASE_REF" == "pcs-0.11" ]]; then
-                USE_PCS_011=true
-              fi
               ;;
           esac
 
           MAIN_MATRIX='{
+            "include": [{
+              "compose": "CentOS-Stream-10",
+              "tmt_plan_regex": "linters",
+              "tmt_context": "distro=centos-stream-10",
+              "variables": "COMPOSE_NAME=CentOSStream10"
+            }]
+          }'
+          PCS_1X_MATRIX='{
+            "include": [{
+              "compose": "CentOS-Stream-10",
+              "tmt_plan_regex": "linters",
+              "tmt_context": "distro=centos-stream-10",
+              "variables": "COMPOSE_NAME=CentOSStream10"
+            }]
+          }'
+          PCS_012_MATRIX='{
             "include": [{
               "compose": "CentOS-Stream-10",
               "tmt_plan_regex": "linters",
@@ -287,11 +295,20 @@ jobs:
             }]
           }'
 
-          if [[ "$USE_PCS_011" == "true" ]]; then
-            MATRIX="$PCS_011_MATRIX"
-          else
-            MATRIX="$MAIN_MATRIX"
-          fi
+          case "$TARGET_BRANCH" in
+            pcs-1.x)
+              MATRIX="$PCS_1X_MATRIX"
+              ;;
+            pcs-0.12)
+              MATRIX="$PCS_012_MATRIX"
+              ;;
+            pcs-0.11)
+              MATRIX="$PCS_011_MATRIX"
+              ;;
+            *)
+              MATRIX="$MAIN_MATRIX"
+              ;;
+          esac
 
           echo "matrix=$(echo "$MATRIX" | jq -c .)" >> "$GITHUB_OUTPUT"
           echo "git_ref=${GIT_REF}" >> "$GITHUB_OUTPUT"
