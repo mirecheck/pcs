@@ -59,7 +59,7 @@ the APIv2 architecture.
 ## Git Branches
 
 - The project has multiple production branches: 'main' branch and several
-  'pcs-$version' (e.g. pcs-0.10, pcs-0.11, pcs-1.0) branches.
+  'pcs-$version' (e.g. pcs-0.10, pcs-0.11, pcs-1.x) branches.
 - A branch which is supposed to be merged to a 'pcs-$version' branch is
   supposed to be prefixed with that branch name, e.g. `pcs-0.11_new-feature`. A
   branch which is supposed to be merged to the main branch is not prefixed like
