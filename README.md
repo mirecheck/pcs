@@ -7,15 +7,16 @@ daemon, which operates as a remote server for pcs.
 ## Pcs Branches
 
 * main
+  * Main development happens here.
+  * This branch is not intended for production use.
   * Clusters running the latest Pacemaker on top of the latest Corosync are
     supported.
-  * The main development happens here.
 * pcs-1.x
-  * Clusters running Pacemaker 3.x on top of Corosync 3.x are supported.
-  * The development of the next stable release happens here.
+  * This is the next stable release.
+  * Clusters running Pacemaker 3.1 on top of Corosync 3.x are supported.
 * pcs-0.12
+  * This is the current stable release.
   * Clusters running Pacemaker 3.0 on top of Corosync 3.x are supported.
-  * The development of the current stable release happens here.
 * pcs-0.11
   * Clusters running Pacemaker 2.1 on top of Corosync 3.x are supported.
   * This branch is in maintenance mode - bugs are being fixed but only a subset
