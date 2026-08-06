@@ -185,6 +185,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       git_ref: ${{ steps.set-matrix.outputs.git_ref }}
+      target_branch: ${{ steps.set-matrix.outputs.target_branch }}
       custom_tmt_plan_regex: >-
         ${{ steps.parse-comment.outputs.custom_tmt_plan_regex }}
     steps:
@@ -312,6 +313,7 @@ jobs:
 
           echo "matrix=$(echo "$MATRIX" | jq -c .)" >> "$GITHUB_OUTPUT"
           echo "git_ref=${GIT_REF}" >> "$GITHUB_OUTPUT"
+          echo "target_branch=${TARGET_BRANCH}" >> "$GITHUB_OUTPUT"
 
   tf-tests:
     # The setup-matrix job may block and require approval if
@@ -338,6 +340,7 @@ jobs:
           compose: ${{ matrix.compose }}
           tmt_context: ${{ matrix.tmt_context }}
           variables: ${{ matrix.variables }}
-          pull_request_status_name: ${{ matrix.compose }}
+          pull_request_status_name: >-
+            ${{ matrix.compose }} + ${{ needs.setup-matrix.outputs.target_branch }}
           update_pull_request_status: true
           create_issue_comment: true
