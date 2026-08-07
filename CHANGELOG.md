@@ -6,6 +6,11 @@
 - Command `pcs stonith update-scsi-devices` no longer triggers unnecessary
   resource restarts when updating SCSI devices. ([RHEL-214140])
 
+### Changed
+- Dropped dependency on `python-dateutil` in favor of the Python standard
+  library `datetime` module. Ordinal date format (`YYYY-DDD`) is no longer
+  accepted in rule date expressions.
+
 ### Deprecated
 - Disabling cluster traffic encryption (setting knet transport crypto options
   `cipher` or `hash` to `none`) ([RHEL-218000])

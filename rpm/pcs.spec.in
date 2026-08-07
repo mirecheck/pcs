@@ -15,7 +15,6 @@ Release: 99+git%{?numcomm:.%{numcomm}}%{?alphatag:.%{alphatag}}%{?dirty:.%{dirty
 # https://fedoraproject.org/wiki/Licensing:Main?rd=Licensing#Good_Licenses
 # GPL-2.0-only: pcs
 # Apache-2.0: dataclasses, tornado
-# Apache-2.0 OR BSD-3-Clause: dateutil
 # MIT: backports, childprocess, dacite, mustermann, rack, rackup,
 #      rack-protection, rack-session, rack-test, sinatra, tilt
 # MIT AND (BSD-2-Clause OR GPL-2.0-or-later): nio4r
@@ -41,7 +40,7 @@ Release: 99+git%{?numcomm:.%{numcomm}}%{?alphatag:.%{alphatag}}%{?dirty:.%{dirty
 #   base64
 # rexml:
 #   strscan (might be included with Ruby)
-License: GPL-2.0-only AND Apache-2.0 AND MIT AND BSD-2-Clause AND BSD-3-Clause AND Ruby AND (BSD-2-Clause OR GPL-2.0-or-later) AND (Apache-2.0 OR BSD-3-Clause) AND (BSD-2-Clause OR Ruby) AND (curl OR LGPL-2.1-or-later)
+License: GPL-2.0-only AND Apache-2.0 AND MIT AND BSD-2-Clause AND BSD-3-Clause AND Ruby AND (BSD-2-Clause OR GPL-2.0-or-later) AND (BSD-2-Clause OR Ruby) AND (curl OR LGPL-2.1-or-later)
 URL: https://github.com/ClusterLabs/pcs
 Summary: Pacemaker/Corosync Configuration System
 
@@ -85,11 +84,6 @@ BuildRequires: python%{python3_version}-setuptools >= 66.1
 
 # for building wheel during make install
 BuildRequires: (python%{python3_version}-wheel if python%{python3_version}-setuptools < 71)
-
-# for bundling dateutil
-%if "@cirpmworkarounds@" != "yes"
-BuildRequires: python%{python3_version}-setuptools_scm
-%endif
 
 # for tier0 tests
 BuildRequires: python%{python3_version}-cryptography

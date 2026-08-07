@@ -1,7 +1,6 @@
 import dataclasses
+import datetime as dt
 from collections import Counter, OrderedDict
-
-from dateutil import parser as dateutil_parser
 
 from pcs.common import reports
 from pcs.common.types import CibRuleExpressionType
@@ -23,6 +22,16 @@ from .expression_part import (
 
 
 class Validator:
+    """
+    This validator uses datetime's fromisoformat() for datetime validation.
+    Currently (up to Python 3.14), fromisoformat() does not support:
+        1. Reduced precision dates (YYYY-MM, YYYY)
+        2. Extended date representation (+-YYYYYY-MM-DD)
+        3. Ordinal dates (YYYY-DDD)
+    Pacemaker only supports ordinal dates (3). If needed, create a wrapper
+    around fromisoformat() to handle them.
+    """
+
     def __init__(
         self,
         parsed_rule: BoolExpr,
@@ -93,7 +102,7 @@ class Validator:
 
         if expr.date_start is not None:
             try:
-                start_date = dateutil_parser.isoparse(expr.date_start)
+                start_date = dt.datetime.fromisoformat(expr.date_start)
             except ValueError:
                 report_list.append(
                     reports.item.ReportItem.error(
@@ -104,7 +113,7 @@ class Validator:
                 )
         if expr.date_end is not None:
             try:
-                end_date = dateutil_parser.isoparse(expr.date_end)
+                end_date = dt.datetime.fromisoformat(expr.date_end)
             except ValueError:
                 report_list.append(
                     reports.item.ReportItem.error(
@@ -208,7 +217,7 @@ class Validator:
     ) -> reports.ReportItemList:
         report_list: reports.ReportItemList = []
         try:
-            dateutil_parser.isoparse(expr.date)
+            dt.datetime.fromisoformat(expr.date)
         except ValueError:
             report_list.append(
                 reports.item.ReportItem.error(

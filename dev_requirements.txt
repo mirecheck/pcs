@@ -8,4 +8,3 @@ types-dataclasses
 # error: Call to untyped function "getinfo" in typed context  [no-untyped-call]
 # so we are stuck with this version until there's a fix
 types-pycurl==7.45.2.20240311
-types-python-dateutil

@@ -36,7 +36,6 @@ daemon, which operates as a remote server for pcs.
 These are the runtime dependencies of pcs and pcsd:
 * python 3.12+
 * python3-cryptography
-* python3-dateutil 2.7.0+
 * python3-lxml
 * python3-pycurl
 * python3-pyparsing 3.0.0+

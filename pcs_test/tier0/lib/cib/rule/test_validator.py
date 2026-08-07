@@ -244,6 +244,29 @@ class DateUnaryExpression(TestCase):
             ],
         )
 
+    def test_date_ordinal_not_supported(self):
+        """
+        Ordinal dates (YYYY-DDD) are valid ISO 8601 and supported by
+        Pacemaker, but datetime's fromisoformat() cannot parse them.
+        This is not intentional and support should be added once the
+        underlying standard library gains this capability.
+        """
+        assert_report_item_list_equal(
+            Validator(
+                BoolExpr(BOOL_AND, [DateUnaryExpr(DATE_OP_GT, "2020-060")])
+            ).get_reports(),
+            [
+                fixture.error(
+                    reports.codes.INVALID_OPTION_VALUE,
+                    option_name="date",
+                    option_value="2020-060",
+                    allowed_values="ISO 8601 date",
+                    cannot_be_empty=False,
+                    forbidden_characters=None,
+                )
+            ],
+        )
+
 
 class DateInrangeExpression(TestCase):
     part_list = {
