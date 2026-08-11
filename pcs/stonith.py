@@ -328,11 +328,10 @@ def stonith_fence(lib: Any, argv: Argv, modifiers: InputModifiers) -> None:
 def stonith_confirm(lib: Any, argv: Argv, modifiers: InputModifiers) -> None:
     """
     Options:
-      * --force - required for confirming that fencing happened - DEPRECATED
       * --yes - required for confirming that fencing happened
     """
     del lib
-    modifiers.ensure_only_supported("--force", "--yes")
+    modifiers.ensure_only_supported("--yes", hint_syntax_changed="1.0")
     if len(argv) != 1:
         utils.err("must specify one (and only one) node to confirm fenced")
 
@@ -341,7 +340,6 @@ def stonith_confirm(lib: Any, argv: Argv, modifiers: InputModifiers) -> None:
         f"If node '{node}' is not powered off or it does have access to shared "
         "resources, data corruption and/or cluster failure may occur",
         bool(modifiers.get("--yes")),
-        bool(modifiers.get("--force")),
     ):
         return
     args = ["stonith_admin", "-C", node]
@@ -383,17 +381,15 @@ def sbd_watchdog_list(lib: Any, argv: Argv, modifiers: InputModifiers) -> None:
 def sbd_watchdog_test(lib: Any, argv: Argv, modifiers: InputModifiers) -> None:
     """
     Options:
-      * --force - required for testing the watchdog - DEPRECATED
       * --yes - required for testing the watchdog
     """
-    modifiers.ensure_only_supported("--force", "--yes")
+    modifiers.ensure_only_supported("--yes", hint_syntax_changed="1.0")
     if len(argv) > 1:
         raise CmdLineInputError()
     if not utils.get_continue_confirmation(
         "This operation is expected to force-reboot this system without "
         "following any shutdown procedures",
         bool(modifiers.get("--yes")),
-        bool(modifiers.get("--force")),
     ):
         return
     watchdog = None
@@ -627,10 +623,9 @@ def sbd_setup_block_device(
 ) -> None:
     """
     Options:
-      * --force - required for wiping specified storage devices - DEPRECATED
       * --yes - required for wiping specified storage devices
     """
-    modifiers.ensure_only_supported("--force", "--yes")
+    modifiers.ensure_only_supported("--yes", hint_syntax_changed="1.0")
     parser = KeyValueParser(argv, repeatable=("device",))
     repeatable_options = parser.get_repeatable()
     device_list = repeatable_options.get("device", [])
@@ -641,7 +636,6 @@ def sbd_setup_block_device(
         f"All current content on device(s) {format_list(device_list)} will be "
         "overwritten",
         bool(modifiers.get("--yes")),
-        bool(modifiers.get("--force")),
     ):
         return
 

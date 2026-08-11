@@ -286,10 +286,9 @@ def quorum_device_heuristics_remove_cmd(
 def quorum_unblock_cmd(lib: Any, argv: Argv, modifiers: InputModifiers) -> None:
     """
     Options:
-      * --force - required for unblocking the quorum - DEPRECATED
       * --yes - required for unblocking the quorum
     """
-    modifiers.ensure_only_supported("--force", "--yes")
+    modifiers.ensure_only_supported("--yes", hint_syntax_changed="1.0")
     if argv:
         raise CmdLineInputError()
 
@@ -317,7 +316,6 @@ def quorum_unblock_cmd(lib: Any, argv: Argv, modifiers: InputModifiers) -> None:
         "do have access to shared resources, data corruption and/or cluster "
         "failure may occur",
         bool(modifiers.get("--yes")),
-        bool(modifiers.get("--force")),
     ):
         return
     for node in unjoined_nodes:

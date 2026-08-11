@@ -30,7 +30,7 @@ from pcs.cli.common.tools import print_to_stderr
 from pcs.cli.file import metadata as file_metadata
 from pcs.cli.reports import process_library_reports
 from pcs.cli.reports.messages import report_item_msg_from_dto
-from pcs.cli.reports.output import deprecation_warning, warn
+from pcs.cli.reports.output import warn
 from pcs.common import file as pcs_file
 from pcs.common import file_type_codes, reports
 from pcs.common.auth import HostAuthData
@@ -1256,13 +1256,15 @@ def cluster_destroy(lib: Any, argv: Argv, modifiers: InputModifiers) -> None:  #
     """
     Options:
       * --all - destroy cluster on all cluster nodes => destroy whole cluster
-      * --force - required for destroying the cluster - DEPRECATED
       * --request-timeout - timeout of HTTP requests, effective only with --all
       * --yes - required for destroying the cluster
     """
     del lib
     modifiers.ensure_only_supported(
-        "--all", "--force", "--request-timeout", "--yes"
+        "--all",
+        "--request-timeout",
+        "--yes",
+        hint_syntax_changed="1.0",
     )
     if argv:
         raise CmdLineInputError()
@@ -1275,7 +1277,6 @@ def cluster_destroy(lib: Any, argv: Argv, modifiers: InputModifiers) -> None:  #
             "This would kill all cluster processes and then PERMANENTLY remove "
             "cluster state and configuration",
             bool(modifiers.get("--yes")),
-            bool(modifiers.get("--force")),
         ):
             return
     if modifiers.get("--all"):
@@ -1396,7 +1397,6 @@ def cluster_verify(lib: Any, argv: Argv, modifiers: InputModifiers) -> None:
 def cluster_report(lib: Any, argv: Argv, modifiers: InputModifiers) -> None:  # noqa: PLR0912
     """
     Options:
-      * --force - allow overwriting existing files - DEPRECATED
       * --from - timestamp
       * --to - timestamp
       * --overwrite - allow overwriting existing files
@@ -1406,24 +1406,23 @@ def cluster_report(lib: Any, argv: Argv, modifiers: InputModifiers) -> None:  # 
     """
 
     del lib
-    modifiers.ensure_only_supported("--force", "--from", "--overwrite", "--to")
+    modifiers.ensure_only_supported(
+        "--from",
+        "--overwrite",
+        "--to",
+        hint_syntax_changed="1.0",
+    )
     if len(argv) != 1:
         raise CmdLineInputError()
 
     outfile = argv[0]
     dest_outfile = outfile + ".tar.bz2"
     if os.path.exists(dest_outfile):
-        if not (modifiers.get("--overwrite") or modifiers.get("--force")):
+        if not modifiers.get("--overwrite"):
             utils.err(
                 dest_outfile + " already exists, use --overwrite to overwrite"
             )
             return
-        if modifiers.get("--force"):
-            # deprecated in the first pcs-0.12 version, replaced by --overwrite
-            deprecation_warning(
-                "Using --force to confirm this action is deprecated and might "
-                "be removed in a future release, use --overwrite instead"
-            )
         try:
             os.remove(dest_outfile)
         except OSError as e:

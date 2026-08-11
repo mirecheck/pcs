@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Removed
+- The deprecated `--force` flag is no longer accepted as an alternative to
+  `--yes` in commands `pcs cluster destroy`, `pcs quorum unblock`,
+  `pcs stonith confirm`, `pcs stonith sbd device setup`, and
+  `pcs stonith sbd watchdog test`. Use `--yes` instead.
+- The deprecated `--force` flag is no longer accepted as an alternative to
+  `--overwrite` in command `pcs cluster report`. Use `--overwrite` instead.
+
 ### Fixed
 - Command `pcs stonith update-scsi-devices` no longer triggers unnecessary
   resource restarts when updating SCSI devices. ([RHEL-214140])

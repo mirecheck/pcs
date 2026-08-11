@@ -2784,6 +2784,14 @@
         pcs commands: --yes
       </description>
     </capability>
+    <capability id="pcs.overwrite-to-confirm-commands" in-pcs="1" in-pcsd="0">
+      <description>
+        Interactive confirmation required by some of pcs commands can be
+        overridden by specifying --overwrite flag.
+
+        pcs commands: --overwrite
+      </description>
+    </capability>
     <capability id="pcs.daemon-ssl-cert.set" in-pcs="1" in-pcsd="1">
       <description>
         Set a SSL certificate (a certificate-key pair) to be used by pcsd on the

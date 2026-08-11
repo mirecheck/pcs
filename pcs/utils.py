@@ -1801,9 +1801,7 @@ def is_run_interactive() -> bool:
     )
 
 
-def get_continue_confirmation(
-    warning_text: str, yes: bool, force: bool
-) -> bool:
+def get_continue_confirmation(warning_text: str, yes: bool) -> bool:
     """
     Either asks user to confirm continuation interactively or use --yes to
     override when running from a script. Returns True if user wants to continue.
@@ -1812,17 +1810,8 @@ def get_continue_confirmation(
 
     warning_text -- describes action that we want the user to confirm
     yes -- was --yes flag provided?
-    force -- was --force flag provided? (deprecated)
     """
-    if force and not yes:
-        # Force may be specified for overriding library errors. We don't want
-        # to report an issue in that case.
-        # deprecated in the first pcs-0.12 version
-        reports_output.deprecation_warning(
-            "Using --force to confirm this action is deprecated and might be "
-            "removed in a future release, use --yes instead"
-        )
-    if yes or force:
+    if yes:
         reports_output.warn(warning_text)
         return True
     if not is_run_interactive():

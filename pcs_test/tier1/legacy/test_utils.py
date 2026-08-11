@@ -1665,33 +1665,13 @@ class GetContinueConfirmation(TestCase):
         self.addCleanup(patcher_output.stop)
         self.mock_output = patcher_output.start()
 
-    def test_yes_force(self):
-        self.assertTrue(utils.get_continue_confirmation(self.text, True, True))
-        self.mock_output.assert_called_once_with(f"Warning: {self.text}")
-
     def test_yes(self):
-        self.assertTrue(utils.get_continue_confirmation(self.text, True, False))
+        self.assertTrue(utils.get_continue_confirmation(self.text, True))
         self.mock_output.assert_called_once_with(f"Warning: {self.text}")
-
-    def test_force(self):
-        self.assertTrue(utils.get_continue_confirmation(self.text, False, True))
-        self.assertEqual(
-            self.mock_output.mock_calls,
-            [
-                mock.call(
-                    "Deprecation Warning: Using --force to confirm this action "
-                    "is deprecated and might be removed in a future release, "
-                    "use --yes instead"
-                ),
-                mock.call(f"Warning: {self.text}"),
-            ],
-        )
 
     def test_nothing(self):
         with self.assertRaises(SystemExit) as cm:
-            self.assertFalse(
-                utils.get_continue_confirmation(self.text, False, False)
-            )
+            self.assertFalse(utils.get_continue_confirmation(self.text, False))
         self.assertEqual(cm.exception.code, 1)
         self.mock_output.assert_called_once_with(
             f"Error: {self.text}, use --yes to override"

@@ -1736,6 +1736,10 @@ EDITOR
 .TP
 no_proxy, https_proxy, all_proxy, NO_PROXY, HTTPS_PROXY, ALL_PROXY
  These environment variables (listed according to their priorities) control how pcs handles proxy servers when connecting to cluster nodes. See curl(1) man page for details.
+.SH CHANGES IN PCS\-1.0
+This section summarizes the most important changes in commands done in pcs\-1.0.x compared to pcs\-0.12.x. For detailed description of current commands see above.
+.SS "\-\-force no longer accepted as an alternative to \-\-yes or \-\-overwrite"
+The \fB\-\-force\fR flag is no longer accepted as an alternative to interactive confirmation or file overwriting in the following commands. Use \fB\-\-yes\fR or \fB\-\-overwrite\fR instead. Affected commands are: 'pcs cluster destroy', 'pcs quorum unblock', 'pcs stonith confirm', 'pcs stonith sbd device setup', 'pcs stonith sbd watchdog test' (\fB\-\-yes\fR) and 'pcs cluster report' (\fB\-\-overwrite\fR).
 .SH CHANGES IN PCS\-0.12
 This section summarizes the most important changes in commands done in pcs\-0.12.x compared to pcs\-0.11.x. For detailed description of current commands see above.
 .SS "Pacemaker 3 changes"

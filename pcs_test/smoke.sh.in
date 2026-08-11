@@ -112,6 +112,6 @@ rm "${token_file}"
 rm "${output_file}"
 rm "${cookie_file}"
 rm "${pcsd_settings_conf_path}"
-pcs cluster destroy --force
+pcs cluster destroy --yes
 userdel -rf testuser
 exit 0
