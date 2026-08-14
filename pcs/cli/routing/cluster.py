@@ -1,6 +1,6 @@
 import pcs.cli.cluster.command as cluster_command
 from pcs import cluster, status, usage
-from pcs.cli.common.errors import raise_command_replaced
+from pcs.cli.common.errors import raise_command_removed, raise_command_replaced
 from pcs.cli.common.routing import create_router
 
 cluster_cmd = create_router(
@@ -36,8 +36,8 @@ cluster_cmd = create_router(
         "pcsd-status": lambda lib, argv, modifiers: raise_command_replaced(
             ["pcs pcsd status", "pcs status pcsd"], pcs_version="0.12"
         ),
-        "certkey": lambda lib, argv, modifiers: raise_command_replaced(
-            ["pcs pcsd certkey"], pcs_version="0.12"
+        "certkey": lambda lib, argv, modifiers: raise_command_removed(
+            pcs_version="1.0"
         ),
         "auth": cluster.cluster_auth_cmd,
         "start": cluster.cluster_start_cmd,
