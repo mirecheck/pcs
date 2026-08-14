@@ -12,7 +12,6 @@ require 'fileutils'
 require 'backports/latest'
 require 'base64'
 require 'curb'
-require 'openssl'
 require 'stringio'
 
 require 'config.rb'
@@ -804,30 +803,6 @@ def read_file_lock(path, binary=false)
       file.close()
     end
   end
-end
-
-def verify_cert_key_pair(cert_data, key_data)
-  errors = []
-
-  begin
-    cert = OpenSSL::X509::Certificate.new(cert_data)
-  rescue OpenSSL::X509::CertificateError => e
-    errors << "Invalid certificate: #{e}"
-  end
-
-  begin
-    key = OpenSSL::PKey.read(key_data)
-  rescue OpenSSL::PKey::PKeyError => e
-    errors << "Invalid key: #{e}"
-  end
-
-  if errors.empty?
-    if not cert.check_private_key(key)
-      errors << 'Certificate does not match the key'
-    end
-  end
-
-  return errors
 end
 
 def cluster_status_from_nodes(auth_user, cluster_nodes, cluster_name)
