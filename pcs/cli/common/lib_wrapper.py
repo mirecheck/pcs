@@ -16,7 +16,6 @@ from pcs.lib.commands import (
     fencing_topology,
     node,
     pcs_cfgsync,
-    pcsd,
     qdevice,
     quorum,
     remote_node,
@@ -350,13 +349,6 @@ def load_module(env, middleware_factory, name):  # noqa: PLR0911, PLR0912
                 "standby_unstandby_list": node.standby_unstandby_list,
                 "standby_unstandby_local": node.standby_unstandby_local,
             },
-        )
-
-    if name == "pcsd":
-        return bind_all(
-            env,
-            middleware.build(),
-            {"synchronize_ssl_certificate": pcsd.synchronize_ssl_certificate},
         )
 
     if name == "pcs_cfgsync":
