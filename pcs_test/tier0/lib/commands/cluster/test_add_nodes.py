@@ -504,32 +504,6 @@ class LocalConfig:
             ]
         )
 
-    def pcsd_ssl_cert_sync_disabled(self):
-        local_prefix = "local.pcsd_ssl_cert_sync_disabled."
-        self.config.fs.isfile(
-            settings.pcsd_config,
-            name=f"{local_prefix}fs.isfile.pcsd_config",
-        )
-        self.config.fs.open(
-            settings.pcsd_config,
-            # Tests for other cases are in SslCertSync class.
-            mock.mock_open(read_data="PCSD_SSL_CERT_SYNC_ENABLED=false\n")(),
-            name=f"{local_prefix}fs.open.pcsd_config",
-        )
-
-    def pcsd_ssl_cert_sync_enabled(self):
-        local_prefix = "local.pcsd_ssl_cert_sync_enabled."
-        self.config.fs.isfile(
-            settings.pcsd_config,
-            name=f"{local_prefix}fs.isfile.pcsd_config",
-        )
-        self.config.fs.open(
-            settings.pcsd_config,
-            # Tests for other cases are in SslCertSync class.
-            mock.mock_open(read_data="PCSD_SSL_CERT_SYNC_ENABLED=true\n")(),
-            name=f"{local_prefix}fs.open.pcsd_config",
-        )
-
     def destroy_cluster(self, new_nodes):
         self.config.http.host.cluster_destroy(
             node_labels=new_nodes,
@@ -544,39 +518,6 @@ class LocalConfig:
             + [
                 fixture.info(reports.codes.CLUSTER_DESTROY_SUCCESS, node=node)
                 for node in new_nodes
-            ]
-        )
-
-    def pcsd_ssl_cert_sync(self, node_labels):
-        local_prefix = "local.pcsd_ssl_cert_sync."
-        pcsd_ssl_cert = "pcsd ssl cert"
-        pcsd_ssl_key = "pcsd ssl key"
-        self.config.fs.open(
-            settings.pcsd_cert_location,
-            mock.mock_open(read_data=pcsd_ssl_cert)(),
-            name=f"{local_prefix}fs.open.pcsd_ssl_cert",
-        )
-        self.config.fs.open(
-            settings.pcsd_key_location,
-            mock.mock_open(read_data=pcsd_ssl_key)(),
-            name=f"{local_prefix}fs.open.pcsd_ssl_key",
-        )
-        self.config.http.host.send_pcsd_cert(
-            cert=pcsd_ssl_cert, key=pcsd_ssl_key, node_labels=node_labels
-        )
-        self.expected_reports.extend(
-            [
-                fixture.info(
-                    reports.codes.PCSD_SSL_CERT_AND_KEY_DISTRIBUTION_STARTED,
-                    node_name_list=node_labels,
-                )
-            ]
-            + [
-                fixture.info(
-                    reports.codes.PCSD_SSL_CERT_AND_KEY_SET_SUCCESS,
-                    node=node,
-                )
-                for node in node_labels
             ]
         )
 
@@ -663,7 +604,6 @@ class AddNodesSuccessMinimal(TestCase):
             "sbd", return_value=False, name=is_sbd_installed_name
         )
         self.config.local.get_host_info(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
         self.config.local.destroy_cluster(self.new_nodes)
         self.config.http.host.update_known_hosts(
             node_labels=self.new_nodes,
@@ -1079,105 +1019,6 @@ def sbd_config_generator(node, with_devices=True):
     )
 
 
-class SslCertSync(TestCase):
-    def setUp(self):
-        self.env_assist, self.config = get_env_tools(self)
-        self.expected_reports = []
-        self.existing_nodes, self.new_nodes = generate_nodes(3, 1)
-        self.existing_corosync_nodes = [
-            node_fixture(node, node_id)
-            for node_id, node in enumerate(self.existing_nodes, 1)
-        ]
-
-        patch_getaddrinfo(self, self.new_nodes)
-        self.config.local.set_expected_reports_list(self.expected_reports)
-        self.config.env.set_known_nodes(
-            self.existing_nodes + self.new_nodes + [QDEVICE_HOST]
-        )
-        self.config.services.is_enabled("sbd", return_value=False)
-        self.config.corosync_conf.load_content(
-            corosync_conf_fixture(self.existing_corosync_nodes)
-        )
-        self.config.runner.cib.load()
-        self.config.http.host.check_auth(node_labels=self.existing_nodes)
-        self.config.services.is_installed("sbd", return_value=False)
-        self.config.local.get_host_info(self.new_nodes)
-
-        self.expected_reports.extend(
-            [
-                fixture.info(
-                    reports.codes.USING_DEFAULT_ADDRESS_FOR_HOST,
-                    host_name=node,
-                    address=node,
-                    address_source=(
-                        reports.const.DEFAULT_ADDRESS_SOURCE_KNOWN_HOSTS
-                    ),
-                )
-                for node in self.new_nodes
-            ]
-        )
-
-    def _assert_certs_not_synced(self):
-        self.config.local.destroy_cluster(self.new_nodes)
-        self.config.http.host.update_known_hosts(
-            node_labels=self.new_nodes,
-            to_add_hosts=self.existing_nodes + self.new_nodes,
-        )
-        self.config.local.disable_sbd(self.new_nodes)
-        self.config.fs.isdir(settings.booth_config_dir, return_value=False)
-        self.config.local.no_file_sync()
-        self.config.local.distribute_and_reload_corosync_conf(
-            corosync_conf_fixture(
-                self.existing_corosync_nodes
-                + [
-                    node_fixture(node, node_id)
-                    for node_id, node in enumerate(
-                        self.new_nodes, len(self.existing_nodes) + 1
-                    )
-                ],
-            ),
-            self.existing_nodes,
-            self.new_nodes,
-        )
-
-        cluster.add_nodes(
-            self.env_assist.get_env(),
-            [{"name": node} for node in self.new_nodes],
-        )
-
-        self.env_assist.assert_reports(self.expected_reports)
-
-    def test_certs_not_synced_if_pcsd_config_missing(self):
-        self.config.fs.isfile(
-            settings.pcsd_config,
-            return_value=False,
-            name="fs.isfile.pcsd_config",
-        )
-        self._assert_certs_not_synced()
-
-    def test_certs_not_synced_if_pcsd_config_empty(self):
-        self.config.fs.isfile(
-            settings.pcsd_config, name="fs.isfile.pcsd_config"
-        )
-        self.config.fs.open(
-            settings.pcsd_config,
-            mock.mock_open(read_data="")(),
-            name="fs.open.pcsd_config",
-        )
-        self._assert_certs_not_synced()
-
-    def test_certs_not_synced_if_pcsd_config_commented(self):
-        self.config.fs.isfile(
-            settings.pcsd_config, name="fs.isfile.pcsd_config"
-        )
-        self.config.fs.open(
-            settings.pcsd_config,
-            mock.mock_open(read_data="#PCSD_SSL_CERT_SYNC_ENABLED=true\n")(),
-            name="fs.open.pcsd_config",
-        )
-        self._assert_certs_not_synced()
-
-
 class AddNodeFull(TestCase):
     def setUp(self):
         self.env_assist, self.config = get_env_tools(self)
@@ -1211,7 +1052,6 @@ class AddNodeFull(TestCase):
         self.config.http.host.check_auth(node_labels=self.existing_nodes)
         self.config.local.get_host_info(self.new_nodes)
         self.config.local.check_sbd(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_enabled()
         self.config.local.destroy_cluster(self.new_nodes)
         self.config.http.host.update_known_hosts(
             node_labels=self.new_nodes,
@@ -1223,7 +1063,6 @@ class AddNodeFull(TestCase):
         )
         self.config.local.setup_booth(self.new_nodes)
         self.config.local.files_sync(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync(self.new_nodes)
         self.config.local.distribute_and_reload_corosync_conf(
             corosync_conf_fixture(
                 self.existing_corosync_nodes
@@ -1292,7 +1131,6 @@ class AddNodeFull(TestCase):
                 for node in self.new_nodes
             ],
         )
-        self.config.local.pcsd_ssl_cert_sync_enabled()
 
         self.env_assist.assert_raise_library_error(
             lambda: cluster.add_nodes(
@@ -1355,7 +1193,6 @@ class AddNodeFull(TestCase):
                 for node in self.new_nodes
             ],
         )
-        self.config.local.pcsd_ssl_cert_sync_enabled()
         self.config.local.destroy_cluster(self.new_nodes)
         self.config.http.host.update_known_hosts(
             node_labels=self.new_nodes,
@@ -1366,7 +1203,6 @@ class AddNodeFull(TestCase):
         )
         self.config.fs.isdir(settings.booth_config_dir, return_value=False)
         self.config.local.no_file_sync()
-        self.config.local.pcsd_ssl_cert_sync(self.new_nodes)
         self.config.local.distribute_and_reload_corosync_conf(
             corosync_conf_fixture(
                 self.existing_corosync_nodes
@@ -1419,7 +1255,6 @@ class AddNodeFull(TestCase):
         self.config.local.atb_needed(self.existing_nodes)
         self.config.local.get_host_info(self.new_nodes)
         self.config.local.check_sbd(self.new_nodes, with_devices=False)
-        self.config.local.pcsd_ssl_cert_sync_enabled()
         self.config.local.destroy_cluster(self.new_nodes)
         self.config.http.host.update_known_hosts(
             node_labels=self.new_nodes,
@@ -1432,7 +1267,6 @@ class AddNodeFull(TestCase):
         )
         self.config.local.setup_booth(self.new_nodes)
         self.config.local.files_sync(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync(self.new_nodes)
         self.config.local.distribute_and_reload_corosync_conf(
             corosync_conf_fixture(
                 self.existing_corosync_nodes
@@ -1485,7 +1319,6 @@ class FailureReloadCorosyncConf(TestCase):
         )
         self.config.services.is_installed("sbd", return_value=False)
         self.config.local.get_host_info(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
         self.config.local.destroy_cluster(self.new_nodes)
         self.config.http.host.update_known_hosts(
             node_labels=self.new_nodes,
@@ -1766,7 +1599,6 @@ class FailureCorosyncConfDistribution(TestCase):
         )
         self.config.services.is_installed("sbd", return_value=False)
         self.config.local.get_host_info(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
         self.config.local.destroy_cluster(self.new_nodes)
         self.config.http.host.update_known_hosts(
             node_labels=self.new_nodes,
@@ -1939,141 +1771,6 @@ class FailureCorosyncConfDistribution(TestCase):
         )
 
 
-class FailurePcsdSslCertSync(TestCase):
-    def setUp(self):
-        self.env_assist, self.config = get_env_tools(self)
-        self.existing_nodes, self.new_nodes = generate_nodes(4, 2)
-        self.expected_reports = []
-        self.pcsd_ssl_cert = "pcsd ssl cert"
-        self.pcsd_ssl_key = "pcsd ssl key"
-        self.unsuccessful_nodes = self.new_nodes[:1]
-        self.successful_nodes = self.new_nodes[1:]
-        self.error = "an error"
-        patch_getaddrinfo(self, self.new_nodes)
-        existing_corosync_nodes = [
-            node_fixture(node, node_id)
-            for node_id, node in enumerate(self.existing_nodes, 1)
-        ]
-        self.config.env.set_known_nodes(self.existing_nodes + self.new_nodes)
-        self.config.local.set_expected_reports_list(self.expected_reports)
-        self.config.services.is_enabled("sbd", return_value=False)
-        self.config.corosync_conf.load_content(
-            corosync_conf_fixture(existing_corosync_nodes)
-        )
-        self.config.runner.cib.load()
-        self.config.http.host.check_auth(
-            node_labels=self.existing_nodes,
-        )
-        self.config.services.is_installed("sbd", return_value=False)
-        self.config.local.get_host_info(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_enabled()
-        self.config.local.destroy_cluster(self.new_nodes)
-        self.config.http.host.update_known_hosts(
-            node_labels=self.new_nodes,
-            to_add_hosts=self.existing_nodes + self.new_nodes,
-        )
-        self.config.local.disable_sbd(self.new_nodes)
-        self.config.fs.isdir(settings.booth_config_dir, return_value=False)
-        self.config.local.no_file_sync()
-        self.expected_reports.extend(
-            [
-                fixture.info(
-                    reports.codes.PCSD_SSL_CERT_AND_KEY_DISTRIBUTION_STARTED,
-                    node_name_list=self.new_nodes,
-                )
-            ]
-        )
-
-    def _add_nodes_with_lib_error(self):
-        self.env_assist.assert_raise_library_error(
-            lambda: cluster.add_nodes(
-                self.env_assist.get_env(),
-                [{"name": node, "addrs": [node]} for node in self.new_nodes],
-            )
-        )
-
-    def test_read_failure(self):
-        self.config.fs.open(
-            settings.pcsd_cert_location,
-            name="fs.open.pcsd_ssl_cert",
-            side_effect=OSError(1, "error cert"),
-        )
-        self.config.fs.open(
-            settings.pcsd_key_location,
-            name="fs.open.pcsd_ssl_key",
-            side_effect=OSError(1, "error key"),
-        )
-
-        self._add_nodes_with_lib_error()
-
-        self.env_assist.assert_reports(
-            self.expected_reports
-            + [
-                fixture.error(
-                    reports.codes.FILE_IO_ERROR,
-                    file_type_code=file_type_codes.PCSD_SSL_CERT,
-                    file_path=settings.pcsd_cert_location,
-                    reason="error cert",
-                    operation=RawFileError.ACTION_READ,
-                ),
-                fixture.error(
-                    reports.codes.FILE_IO_ERROR,
-                    file_type_code=file_type_codes.PCSD_SSL_KEY,
-                    file_path=settings.pcsd_key_location,
-                    reason="error key",
-                    operation=RawFileError.ACTION_READ,
-                ),
-            ]
-        )
-
-    def test_communication_failure(self):
-        self.config.fs.open(
-            settings.pcsd_cert_location,
-            mock.mock_open(read_data=self.pcsd_ssl_cert)(),
-            name="fs.open.pcsd_ssl_cert",
-        )
-        self.config.fs.open(
-            settings.pcsd_key_location,
-            mock.mock_open(read_data=self.pcsd_ssl_key)(),
-            name="fs.open.pcsd_ssl_key",
-        )
-        self.config.http.host.send_pcsd_cert(
-            cert=self.pcsd_ssl_cert,
-            key=self.pcsd_ssl_key,
-            communication_list=[
-                {
-                    "label": node,
-                    "response_code": 400,
-                    "output": self.error,
-                }
-                for node in self.unsuccessful_nodes
-            ]
-            + [dict(label=node) for node in self.successful_nodes],
-        )
-
-        self._add_nodes_with_lib_error()
-
-        self.env_assist.assert_reports(
-            self.expected_reports
-            + [
-                fixture.info(
-                    reports.codes.PCSD_SSL_CERT_AND_KEY_SET_SUCCESS,
-                    node=node,
-                )
-                for node in self.successful_nodes
-            ]
-            + [
-                fixture.error(
-                    reports.codes.NODE_COMMUNICATION_COMMAND_UNSUCCESSFUL,
-                    node=node,
-                    command="remote/set_certs",
-                    reason=self.error,
-                )
-                for node in self.unsuccessful_nodes
-            ]
-        )
-
-
 class FailureFilesDistribution(TestCase):
     def setUp(self):
         self.env_assist, self.config = get_env_tools(self)
@@ -2108,7 +1805,6 @@ class FailureFilesDistribution(TestCase):
         )
         self.config.services.is_installed("sbd", return_value=False)
         self.config.local.get_host_info(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
         self.config.local.destroy_cluster(self.new_nodes)
         self.config.http.host.update_known_hosts(
             node_labels=self.new_nodes,
@@ -2650,7 +2346,6 @@ class FailureBoothConfigsDistribution(TestCase):
         )
         self.config.services.is_installed("sbd", return_value=False)
         self.config.local.get_host_info(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
         self.config.local.destroy_cluster(self.new_nodes)
         self.config.http.host.update_known_hosts(
             node_labels=self.new_nodes,
@@ -3295,7 +2990,6 @@ class FailureDisableSbd(TestCase):
         self.config.http.host.check_auth(node_labels=self.existing_nodes)
         self.config.services.is_installed("sbd", return_value=False)
         self.config.local.get_host_info(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
         self.config.local.destroy_cluster(self.new_nodes)
         self.config.http.host.update_known_hosts(
             node_labels=self.new_nodes,
@@ -3429,7 +3123,6 @@ class FailureEnableSbd(TestCase):
         self.config.http.host.check_auth(node_labels=self.existing_nodes)
         self.config.local.get_host_info(self.new_nodes)
         self.config.local.check_sbd(self.new_nodes, with_devices=False)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
         self.config.local.destroy_cluster(self.new_nodes)
         self.config.http.host.update_known_hosts(
             node_labels=self.new_nodes,
@@ -3645,7 +3338,6 @@ class FailureQdevice(TestCase):
         self.config.runner.cib.load()
         self.config.http.host.check_auth(node_labels=self.existing_nodes)
         self.config.local.get_host_info(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
         self.config.local.destroy_cluster(self.new_nodes)
         self.config.http.host.update_known_hosts(
             node_labels=self.new_nodes,
@@ -4039,7 +3731,6 @@ class FailureKnownHostsUpdate(TestCase):
         self.config.http.host.check_auth(node_labels=self.existing_nodes)
         self.config.services.is_installed("sbd", return_value=False)
         self.config.local.get_host_info(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
         self.config.local.destroy_cluster(self.new_nodes)
         self.expected_reports.extend(
             [
@@ -4147,7 +3838,6 @@ class AddNodeClusterDestroyFail(TestCase):
         self.config.http.host.check_auth(node_labels=existing_nodes)
         self.config.services.is_installed("sbd", return_value=False)
         self.config.local.get_host_info(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
         self.expected_reports.extend(
             [
                 fixture.info(

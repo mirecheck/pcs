@@ -70,7 +70,6 @@ class GetTargets(TestCase):
             .http.host.check_auth(node_labels=self.existing_nodes[1:])
             .services.is_installed("sbd", return_value=False)
             .local.get_host_info(self.new_nodes)
-            .local.pcsd_ssl_cert_sync_disabled()
         )
 
         self._add_nodes_with_lib_error()
@@ -93,7 +92,6 @@ class GetTargets(TestCase):
         self.config.http.host.check_auth(node_labels=self.existing_nodes[1:])
         self.config.services.is_installed("sbd", return_value=False)
         self.config.local.get_host_info(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
         self.config.local.destroy_cluster(self.new_nodes)
         self.config.http.host.update_known_hosts(
             node_labels=self.new_nodes,
@@ -133,7 +131,6 @@ class GetTargets(TestCase):
             self.config.env.set_known_nodes(self.new_nodes)
             .services.is_installed("sbd", return_value=False)
             .local.get_host_info(self.new_nodes)
-            .local.pcsd_ssl_cert_sync_disabled()
         )
 
         self._add_nodes_with_lib_error()
@@ -155,7 +152,6 @@ class GetTargets(TestCase):
             self.config.env.set_known_nodes(self.new_nodes)
             .services.is_installed("sbd", return_value=False)
             .local.get_host_info(self.new_nodes)
-            .local.pcsd_ssl_cert_sync_disabled()
         )
 
         self._add_nodes_with_lib_error(skip_offline=True)
@@ -183,7 +179,6 @@ class GetTargets(TestCase):
             )
             .http.host.check_auth(node_labels=self.existing_nodes)
             .local.get_host_info(self.new_nodes)
-            .local.pcsd_ssl_cert_sync_disabled()
         )
 
         self._add_nodes_with_lib_error(skip_offline=skip_offline)
@@ -211,7 +206,6 @@ class GetTargets(TestCase):
             .http.host.check_auth(node_labels=self.existing_nodes)
             .services.is_installed("sbd", return_value=False)
             .local.get_host_info(self.new_nodes[1:])
-            .local.pcsd_ssl_cert_sync_disabled()
         )
 
         self._add_nodes_with_lib_error(skip_offline=skip_offline)
@@ -263,7 +257,6 @@ class NoneNamesMissing(TestCase):
 
         self.config.services.is_installed("sbd", return_value=False)
         self.config.local.get_host_info(self.new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
 
         self.env_assist.assert_raise_library_error(
             lambda: cluster.add_nodes(
@@ -346,7 +339,6 @@ class Inputs(TestCase):
         )
         self.config.http.host.check_auth(node_labels=existing_nodes)
         self.config.local.get_host_info(new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
 
         self.env_assist.assert_raise_library_error(
             lambda: cluster.add_nodes(
@@ -444,7 +436,6 @@ class Inputs(TestCase):
         self.config.runner.cib.load(returncode=1, stderr="an error")
         self.config.http.host.check_auth(node_labels=existing_nodes)
         self.config.local.get_host_info(new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
 
     def test_conflict_existing_nodes_cib_load_error(self):
         node_name = "new1"
@@ -513,7 +504,6 @@ class Inputs(TestCase):
         self.config.runner.cib.load()
         self.config.http.host.check_auth(node_labels=existing_nodes)
         self.config.local.get_host_info(new_nodes)
-        self.config.local.pcsd_ssl_cert_sync_disabled()
 
         self.env_assist.assert_raise_library_error(
             lambda: cluster.add_nodes(
@@ -560,7 +550,6 @@ class Inputs(TestCase):
             .http.host.check_auth(node_labels=existing_nodes)
             .services.is_installed("sbd", return_value=False)
             .local.get_host_info(new_nodes)
-            .local.pcsd_ssl_cert_sync_disabled()
         )
 
         self.env_assist.assert_raise_library_error(
@@ -653,7 +642,6 @@ class Inputs(TestCase):
                     ),
                 ]
             )
-            .local.pcsd_ssl_cert_sync_disabled()
         )
 
         self.env_assist.assert_raise_library_error(
@@ -750,7 +738,6 @@ class Inputs(TestCase):
                     ),
                 ]
             )
-            .local.pcsd_ssl_cert_sync_disabled()
         )
 
         self.env_assist.assert_raise_library_error(
@@ -836,7 +823,6 @@ class Inputs(TestCase):
             .runner.cib.load()
             .http.host.check_auth(node_labels=existing_nodes)
             .local.get_host_info(new_nodes)
-            .local.pcsd_ssl_cert_sync_disabled()
         )
 
         self.env_assist.assert_raise_library_error(
@@ -878,7 +864,6 @@ class Inputs(TestCase):
             .runner.cib.load()
             .http.host.check_auth(node_labels=existing_nodes)
             .local.get_host_info(new_nodes)
-            .local.pcsd_ssl_cert_sync_disabled()
         )
 
         self.env_assist.assert_raise_library_error(
@@ -943,7 +928,6 @@ class ClusterStatus(TestCase):
             self.config.http.host.check_auth(node_labels=existing_nodes)
         if with_get_host_info:
             self.config.local.get_host_info(new_nodes)
-            self.config.local.pcsd_ssl_cert_sync_disabled()
 
     def test_all_nodes_offline_skipped(self):
         existing_nodes = ["node1", "node2"]
@@ -1171,7 +1155,6 @@ class ClusterStatus(TestCase):
                     ),
                 ]
             )
-            .local.pcsd_ssl_cert_sync_disabled()
         )
 
         self.env_assist.assert_raise_library_error(
@@ -1308,7 +1291,6 @@ class ClusterStatus(TestCase):
         self.config.http.host.get_host_info(
             communication_list=self.fixture_get_host_info_communication()
         )
-        self.config.local.pcsd_ssl_cert_sync_disabled()
 
         self.env_assist.assert_raise_library_error(
             lambda: cluster.add_nodes(
@@ -1376,7 +1358,6 @@ class ClusterStatus(TestCase):
         self.config.http.host.get_host_info(
             communication_list=self.fixture_get_host_info_communication()
         )
-        self.config.local.pcsd_ssl_cert_sync_disabled()
 
         self.env_assist.assert_raise_library_error(
             lambda: cluster.add_nodes(
@@ -1558,7 +1539,6 @@ class ClusterStatus(TestCase):
                     },
                 ]
             )
-            .local.pcsd_ssl_cert_sync_disabled()
         )
 
         self.env_assist.assert_raise_library_error(
@@ -1691,7 +1671,6 @@ class ClusterStatus(TestCase):
                     },
                 ]
             )
-            .local.pcsd_ssl_cert_sync_disabled()
         )
 
         self.env_assist.assert_raise_library_error(

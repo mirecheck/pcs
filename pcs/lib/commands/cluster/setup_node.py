@@ -13,7 +13,6 @@ from pcs.lib.commands.cluster.setup_utils import (
     get_addrs_defaulter,
     get_validated_wait_timeout,
     host_check_cluster_setup,
-    is_ssl_cert_sync_enabled,
     normalize_dict,
     set_defaults_in_dict,
     start_cluster,
@@ -30,7 +29,6 @@ from pcs.lib.communication.nodes import (
     EnableCluster,
     GetHostInfo,
     GetOnlineTargets,
-    SendPcsdSslCertAndKey,
     UpdateKnownHosts,
 )
 from pcs.lib.communication.sbd import (
@@ -345,10 +343,6 @@ def add_nodes(  # noqa: PLR0912, PLR0915
             )
         run_com(env.get_node_communicator(), com_cmd_sbd)
 
-    # If there is an error reading the file, this will report it and exit
-    # safely before any change is made to the nodes.
-    sync_ssl_certs = is_ssl_cert_sync_enabled(report_processor)
-
     if report_processor.has_errors:
         raise LibraryError()
 
@@ -535,51 +529,6 @@ def add_nodes(  # noqa: PLR0912, PLR0915
         com_cmd = DistributeFilesWithoutForces(
             env.report_processor, files_action
         )
-        com_cmd.set_targets(new_nodes_target_list)
-        run_and_raise(env.get_node_communicator(), com_cmd)
-
-    # Distribute and reload pcsd SSL certificate
-    if sync_ssl_certs:
-        report_processor.report(
-            reports.ReportItem.info(
-                reports.messages.PcsdSslCertAndKeyDistributionStarted(
-                    sorted([target.label for target in new_nodes_target_list])
-                )
-            )
-        )
-
-        try:
-            with open(settings.pcsd_cert_location, "r") as file:
-                ssl_cert = file.read()
-        except OSError as e:
-            report_processor.report(
-                reports.ReportItem.error(
-                    reports.messages.FileIoError(
-                        file_type_codes.PCSD_SSL_CERT,
-                        RawFileError.ACTION_READ,
-                        format_os_error(e),
-                        file_path=settings.pcsd_cert_location,
-                    )
-                )
-            )
-        try:
-            with open(settings.pcsd_key_location, "r") as file:
-                ssl_key = file.read()
-        except OSError as e:
-            report_processor.report(
-                reports.ReportItem.error(
-                    reports.messages.FileIoError(
-                        file_type_codes.PCSD_SSL_KEY,
-                        RawFileError.ACTION_READ,
-                        format_os_error(e),
-                        file_path=settings.pcsd_key_location,
-                    )
-                )
-            )
-        if report_processor.has_errors:
-            raise LibraryError()
-
-        com_cmd = SendPcsdSslCertAndKey(env.report_processor, ssl_cert, ssl_key)
         com_cmd.set_targets(new_nodes_target_list)
         run_and_raise(env.get_node_communicator(), com_cmd)
 
