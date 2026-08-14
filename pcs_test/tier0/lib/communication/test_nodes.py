@@ -15,14 +15,6 @@ class GetOnlineTargets(TestCase):
     """
 
 
-class SendPcsdSslCertAndKey(TestCase):
-    """
-    tested in:
-        pcs_test.tier0.lib.commands.cluster.test_setup
-        pcs_test.tier0.lib.commands.test_pcsd
-    """
-
-
 class RemoveNodesFromCib(TestCase):
     """
     tested in:

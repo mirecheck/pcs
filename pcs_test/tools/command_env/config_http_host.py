@@ -157,34 +157,6 @@ class HostShortcuts:
             ],
         )
 
-    def send_pcsd_cert(
-        self,
-        cert,
-        key,
-        node_labels=None,
-        communication_list=None,
-        name="http.host.send_pcsd_cert",
-        before=None,
-    ):
-        """
-        Create a call for sending pcsd SSL cert and key
-
-        string cert -- pcsd SSL certificate
-        string key -- pcsd SSL key
-        node_labels list -- create success responses from these nodes
-        communication_list list -- create custom responses
-        name string -- the key of this call
-        """
-        place_multinode_call(
-            self.__calls,
-            name,
-            node_labels,
-            communication_list,
-            action="remote/set_certs",
-            param_list=[("ssl_cert", cert), ("ssl_key", key)],
-            before=before,
-        )
-
     def enable_cluster(
         self,
         node_labels=None,

@@ -1,17 +1,13 @@
 import math
-import os.path
 import time
 
 from pcs import settings
-from pcs.common import file_type_codes, reports
-from pcs.common.file import RawFileError
-from pcs.common.tools import format_os_error
+from pcs.common import reports
 from pcs.lib.communication.nodes import CheckPacemakerStarted, StartCluster
 from pcs.lib.communication.tools import run as run_com
 from pcs.lib.communication.tools import run_and_raise
 from pcs.lib.errors import LibraryError
 from pcs.lib.pacemaker.values import get_valid_timeout_seconds
-from pcs.lib.tools import environment_file_to_dict
 
 
 def start_cluster(
@@ -251,26 +247,3 @@ def get_validated_wait_timeout(report_processor, wait, start):
     except LibraryError as e:
         report_processor.report_list(e.args)
     return None
-
-
-def is_ssl_cert_sync_enabled(report_processor: reports.ReportProcessor) -> bool:
-    try:
-        if os.path.isfile(settings.pcsd_config):
-            with open(settings.pcsd_config, "r") as cfg_file:
-                cfg = environment_file_to_dict(cfg_file.read())
-                return (
-                    cfg.get("PCSD_SSL_CERT_SYNC_ENABLED", "false").lower()
-                    == "true"
-                )
-    except OSError as e:
-        report_processor.report(
-            reports.ReportItem.error(
-                reports.messages.FileIoError(
-                    file_type_codes.PCSD_ENVIRONMENT_CONFIG,
-                    RawFileError.ACTION_READ,
-                    format_os_error(e),
-                    file_path=settings.pcsd_config,
-                )
-            )
-        )
-    return False
