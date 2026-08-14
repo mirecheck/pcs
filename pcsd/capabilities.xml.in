@@ -211,8 +211,6 @@
     <capability id="cluster.create.no-keys-sync" in-pcs="1" in-pcsd="1">
       <description>
         Do not create and distribute these files when creating a cluster:
-         * pcsd ssl cert
-         * pcsd ssl key
          * pacemaker authkey
          * corosync authkey
 
@@ -2790,23 +2788,6 @@
         overridden by specifying --overwrite flag.
 
         pcs commands: --overwrite
-      </description>
-    </capability>
-    <capability id="pcs.daemon-ssl-cert.set" in-pcs="1" in-pcsd="1">
-      <description>
-        Set a SSL certificate (a certificate-key pair) to be used by pcsd on the
-        local host.
-
-        pcs commands: pcsd certkey
-        daemon urls: set_certs
-      </description>
-    </capability>
-    <capability id="pcs.daemon-ssl-cert.sync-to-local-cluster" in-pcs="1" in-pcsd="0">
-      <description>
-        Push the daemon's SSL certificate from the local host to all nodes in
-        the local cluster.
-
-        pcs commands: pcsd sync-certificates
       </description>
     </capability>
 

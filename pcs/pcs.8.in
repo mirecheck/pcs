@@ -506,7 +506,7 @@ Quorum options are: auto_tie_breaker, last_man_standing, last_man_standing_windo
 
 Transports and their options, link, compression, crypto and totem options are all documented in corosync.conf(5) man page; knet link options are prefixed 'knet_' there, compression options are prefixed 'knet_compression_' and crypto options are prefixed 'crypto_'. Quorum options are documented in votequorum(5) man page.
 
-\fB\-\-no\-cluster\-uuid\fR will not generate a unique ID for the cluster. \fB\-\-enable\fR will configure the cluster to start on nodes boot. \fB\-\-start\fR will start the cluster right after creating it. \fB\-\-wait\fR will wait up to 'n' seconds for the cluster to start. \fB\-\-no\-keys\-sync\fR will skip creating and distributing pcsd SSL certificate and key and corosync and pacemaker authkey files. Use this if you provide your own certificates and keys.
+\fB\-\-no\-cluster\-uuid\fR will not generate a unique ID for the cluster. \fB\-\-enable\fR will configure the cluster to start on nodes boot. \fB\-\-start\fR will start the cluster right after creating it. \fB\-\-wait\fR will wait up to 'n' seconds for the cluster to start. \fB\-\-no\-keys\-sync\fR will skip creating and distributing corosync and pacemaker authkey files. Use this if you provide your own keys.
 
 Local only mode:
 .br
@@ -521,8 +521,6 @@ By default, pcs connects to all specified nodes to verify they can be used in th
 * synchronize corosync and pacemaker authkeys, /etc/corosync/authkey and /etc/pacemaker/authkey respectively, and the corosync.conf file
 .br
 * authenticate the cluster nodes against each other ('pcs cluster auth' or 'pcs host auth' command)
-.br
-* synchronize pcsd certificates (so that pcs web UI can be used in an HA mode)
 
 Examples:
 .br
@@ -1594,14 +1592,8 @@ checkpoint restore <checkpoint_number>
 Restore cluster configuration to specified checkpoint.
 .SS "pcsd"
 .TP
-certkey <certificate file> <key file>
-Load custom certificate and key files for use in pcsd.
-.TP
 status [<node>]...
 Show current status of pcsd on nodes specified, or on all nodes configured in the local cluster if no nodes are specified.
-.TP
-sync\-certificates
-Sync pcsd certificates to all nodes in the local cluster.
 .TP
 deauth [<token>]...
 Delete locally stored authentication tokens used by remote systems to connect to the local pcsd instance. If no tokens are specified all tokens will be deleted. After this command is run other nodes will need to re\-authenticate against this node to be able to connect to it.
@@ -1740,6 +1732,13 @@ no_proxy, https_proxy, all_proxy, NO_PROXY, HTTPS_PROXY, ALL_PROXY
 This section summarizes the most important changes in commands done in pcs\-1.0.x compared to pcs\-0.12.x. For detailed description of current commands see above.
 .SS "\-\-force no longer accepted as an alternative to \-\-yes or \-\-overwrite"
 The \fB\-\-force\fR flag is no longer accepted as an alternative to interactive confirmation or file overwriting in the following commands. Use \fB\-\-yes\fR or \fB\-\-overwrite\fR instead. Affected commands are: 'pcs cluster destroy', 'pcs quorum unblock', 'pcs stonith confirm', 'pcs stonith sbd device setup', 'pcs stonith sbd watchdog test' (\fB\-\-yes\fR) and 'pcs cluster report' (\fB\-\-overwrite\fR).
+.SS "pcsd"
+.TP
+certkey
+This command has been removed.
+.TP
+sync\-certificates
+This command has been removed.
 .SH CHANGES IN PCS\-0.12
 This section summarizes the most important changes in commands done in pcs\-0.12.x compared to pcs\-0.11.x. For detailed description of current commands see above.
 .SS "Pacemaker 3 changes"
@@ -1780,7 +1779,7 @@ This deprecated command has been removed. Use 'pcs alert config' instead.
 .SS "cluster"
 .TP
 certkey
-This deprecated command has been removed. Use 'pcs pcsd certkey' instead.
+This deprecated command has been removed.
 .TP
 node add\-remote | add\-guest
 \fB\-\-wait\fR option is deprecated. Instead, use the 'pcs status wait' command to wait for the cluster to settle into stable state. Use the 'pcs status query resource' commands to verify that the resource is in the expected state after the wait.

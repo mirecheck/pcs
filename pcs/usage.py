@@ -1563,9 +1563,8 @@ Commands:
         --enable will configure the cluster to start on nodes boot.
         --start will start the cluster right after creating it.
         --wait will wait up to 'n' seconds for the cluster to start.
-        --no-keys-sync will skip creating and distributing pcsd SSL certificate
-            and key and corosync and pacemaker authkey files. Use this if you
-            provide your own certificates and keys.
+        --no-keys-sync will skip creating and distributing corosync and
+            pacemaker authkey files. Use this if you provide your own keys.
 
         Local only mode:
         By default, pcs connects to all specified nodes to verify they can be
@@ -1584,8 +1583,6 @@ Commands:
           and /etc/pacemaker/authkey respectively, and the corosync.conf file
         * authenticate the cluster nodes against each other ('pcs cluster auth'
           or 'pcs host auth' command)
-        * synchronize pcsd certificates (so that pcs web UI can be used in an HA
-          mode)
 
         Examples:
         Create a cluster with default settings:
@@ -3024,15 +3021,9 @@ Usage: pcs pcsd [commands]...
 Manage pcs daemon
 
 Commands:
-    certkey <certificate file> <key file>
-        Load custom certificate and key files for use in pcsd.
-
     status [<node>]...
         Show current status of pcsd on nodes specified, or on all nodes
         configured in the local cluster if no nodes are specified.
-
-    sync-certificates
-        Sync pcsd certificates to all nodes in the local cluster.
 
     deauth [<token>]...
        Delete locally stored authentication tokens used by remote systems to
