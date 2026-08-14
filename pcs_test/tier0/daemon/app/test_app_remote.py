@@ -1,8 +1,7 @@
 import base64
 import logging
-from unittest import mock
 
-from pcs.daemon import http_server, ruby_pcsd
+from pcs.daemon import ruby_pcsd
 from pcs.daemon.app import sinatra_remote
 
 from pcs_test.tier0.daemon.app import fixtures_app
@@ -15,9 +14,6 @@ logging.getLogger("tornado.access").setLevel(logging.CRITICAL)
 class AppTest(fixtures_app.AppTest):
     def setUp(self):
         self.wrapper = fixtures_app.RubyPcsdWrapper(ruby_pcsd.SINATRA)
-        self.https_server_manage = mock.MagicMock(
-            spec_set=http_server.HttpsServerManage
-        )
         self.api_auth_provider_factory = MockAuthProviderFactory()
         super().setUp()
 
@@ -25,32 +21,7 @@ class AppTest(fixtures_app.AppTest):
         return sinatra_remote.get_routes(
             self.api_auth_provider_factory,
             self.wrapper,
-            self.https_server_manage,
         )
-
-
-class SetCerts(AppTest):
-    def setUp(self):
-        super().setUp()
-        self.headers = {"Cookie": "token=1234"}
-
-    def test_it_asks_for_cert_reload_if_ruby_succeeds(self):
-        self.wrapper.status_code = 200
-        self.wrapper.body = b"success"
-        # body is irrelevant
-        self.assert_wrappers_response(
-            self.post("/remote/set_certs", body={}, headers=self.headers)
-        )
-        self.https_server_manage.reload_certs.assert_called_once()
-
-    def test_it_not_asks_for_cert_reload_if_ruby_fail(self):
-        self.wrapper.status_code = 400
-        self.wrapper.body = b"cannot save ssl certificate without ssl key"
-        # body is irrelevant
-        self.assert_wrappers_response(
-            self.post("/remote/set_certs", body={}, headers=self.headers)
-        )
-        self.https_server_manage.reload_certs.assert_not_called()
 
 
 class SinatraRemote(AppTest):

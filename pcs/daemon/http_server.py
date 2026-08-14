@@ -17,15 +17,8 @@ class HttpsServerManage:
     Instance of HttpsServerManage encapsulates the construction of an HTTPServer
     """
 
-    # Main motivation for this object is to be able to change the ssl
-    # certificates from an http request without restarting the whole pcsd
-    # daemon.
-    #
-    # For this purpose an application, which handles http requests, gets
-    # a reference to the HttpsServerManage instance. When new certificates
-    # arrive via a request the application asks the HttpsServerManage instance
-    # for necessary steps (it stops listening of the current HTTPServer and
-    # starts a new one with updated certificates).
+    # This object encapsulates creation and lifecycle of the HTTPServer,
+    # including SSL certificate handling and socket management.
 
     def __init__(
         self,
@@ -58,7 +51,7 @@ class HttpsServerManage:
 
         log.pcsd.info("Starting server...")
 
-        app = self.__make_app(self)
+        app = self.__make_app()
         self.__tcp_server = HTTPServer(
             app,
             ssl_options=self.__ssl.create_context(),
@@ -85,12 +78,3 @@ class HttpsServerManage:
         log.pcsd.info("Server is listening")
         self.__server_is_running = True
         return self
-
-    def reload_certs(self) -> None:
-        if not self.server_is_running:
-            raise HttpsServerManageException(
-                "Could not reload certificates, server is not running"
-            )
-        log.pcsd.info("Stopping server to reload ssl certificates...")
-        self.stop()
-        self.start()

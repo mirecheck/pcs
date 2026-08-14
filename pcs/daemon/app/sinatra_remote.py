@@ -10,7 +10,6 @@ from pcs.daemon.app.common import (
     get_legacy_desired_user_from_request,
 )
 from pcs.daemon.app.sinatra_common import SinatraMixin
-from pcs.daemon.http_server import HttpsServerManage
 from pcs.lib.auth.tools import get_effective_user
 from pcs.lib.auth.types import AuthUser
 
@@ -60,37 +59,9 @@ class SinatraRemote(LegacyApiHandler, SinatraMixin):
         self.send_sinatra_result(result)
 
 
-class SetCerts(SinatraRemote):
-    """
-    SetCerts handles url for setting new certificate and key. It calls the
-    Sinatra for setting certificate and key and in the case of the success it
-    will take care of notify of http sever about this change.
-    """
-
-    __https_server_manage: HttpsServerManage
-
-    def initialize(  # type: ignore[override]
-        self,
-        api_auth_provider_factory: ApiAuthProviderFactoryInterface,
-        ruby_pcsd_wrapper: ruby_pcsd.Wrapper,
-        https_server_manage: HttpsServerManage,
-    ) -> None:
-        super().initialize(api_auth_provider_factory, ruby_pcsd_wrapper)
-        self.__https_server_manage = https_server_manage
-
-    async def _handle_request(self) -> None:
-        result = await self.ruby_pcsd_wrapper.request(
-            self.effective_user, self.request
-        )
-        if result.status == 200:
-            self.__https_server_manage.reload_certs()
-        self.send_sinatra_result(result)
-
-
 def get_routes(
     api_auth_provider_factory: ApiAuthProviderFactoryInterface,
     ruby_pcsd_wrapper: ruby_pcsd.Wrapper,
-    https_server_manage: HttpsServerManage,
 ) -> RoutesType:
     sinatra_remote_options = dict(
         api_auth_provider_factory=api_auth_provider_factory,
@@ -100,13 +71,5 @@ def get_routes(
     return [
         # Urls protected by tokens. It is still done by ruby pcsd.
         (r"/run_pcs", SinatraRemote, sinatra_remote_options),
-        (
-            r"/remote/set_certs",
-            SetCerts,
-            dict(
-                **sinatra_remote_options,
-                https_server_manage=https_server_manage,
-            ),
-        ),
         (r"/remote/.*", SinatraRemote, sinatra_remote_options),
     ]
