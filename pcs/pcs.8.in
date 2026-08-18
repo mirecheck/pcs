@@ -1779,7 +1779,7 @@ This deprecated command has been removed. Use 'pcs alert config' instead.
 .SS "cluster"
 .TP
 certkey
-This deprecated command has been removed.
+This deprecated command has been removed. Use 'pcs pcsd certkey' instead.
 .TP
 node add\-remote | add\-guest
 \fB\-\-wait\fR option is deprecated. Instead, use the 'pcs status wait' command to wait for the cluster to settle into stable state. Use the 'pcs status query resource' commands to verify that the resource is in the expected state after the wait.
