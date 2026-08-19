@@ -120,12 +120,8 @@ def configure_app(  # noqa: PLR0913
     *,
     debug: bool = False,
 ):
-    def make_app(https_server_manage: HttpsServerManage):
-        """
-        https_server_manage -- allows to control the server (specifically
-            reload its SSL certificates). A relevant handler should get this
-            object via the method `initialize`.
-        """
+    def make_app():
+        """Create and return the Tornado application."""
         if _TORNADO_SUPPORTS_DISABLE_MULTIPART:
             # Disable multipart requests to enhance security due to recent CVEs
             # but only if Tornado supports it (added in Tornado 6.5.5)
@@ -178,9 +174,7 @@ def configure_app(  # noqa: PLR0913
             capabilities_app.get_routes(api_auth_factory, pcsd_capabilities)
         )
         routes.extend(
-            sinatra_remote.get_routes(
-                api_auth_factory, ruby_pcsd_wrapper, https_server_manage
-            )
+            sinatra_remote.get_routes(api_auth_factory, ruby_pcsd_wrapper)
         )
 
         if webui:

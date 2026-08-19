@@ -80,22 +80,3 @@ class ManageTest(TestCase, create_setup_patch_mixin(http_server)):
         self.server_list[0].stop.assert_called_once()
         self.server_list[1].stop.assert_called_once()
         self.assertFalse(self.https_server_manage.server_is_running)
-
-    def test_reload_certs_raises_when_server_not_started(self):
-        self.assertRaises(
-            http_server.HttpsServerManageException,
-            self.https_server_manage.reload_certs,
-        )
-
-    def test_reload_certs_exchanges_servers(self):
-        self.https_server_manage.start()
-        self.https_server_manage.reload_certs()
-        # tcp socket server
-        self.server_list[0].stop.assert_called_once()
-        self.server_list[2].add_sockets.assert_called_once_with(BIND_SOCKETS)
-
-        # unix socket server
-        self.server_list[1].stop.assert_called_once()
-        self.server_list[3].add_socket.assert_called_once_with(BIND_UNIX_SOCKET)
-
-        self.assertTrue(self.https_server_manage.server_is_running)

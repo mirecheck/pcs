@@ -23,7 +23,6 @@ def remote(params, request, auth_user)
   remote_cmd_without_pacemaker = {
       :status => method(:node_status),
       :cluster_status => method(:cluster_status_remote),
-      :set_certs => method(:set_certs),
       :cluster_start => method(:cluster_start),
       :cluster_stop => method(:cluster_stop),
       :config_restore => method(:config_restore),
@@ -352,39 +351,6 @@ def cluster_disable(params, request, auth_user)
     end
     return "Cluster Disabled"
   end
-end
-
-def set_certs(params, request, auth_user)
-  if not allowed_for_local_cluster(auth_user, Permissions::FULL)
-    return 403, 'Permission denied'
-  end
-
-  ssl_cert = (params['ssl_cert'] || '').strip
-  ssl_key = (params['ssl_key'] || '').strip
-  if ssl_cert.empty? and !ssl_key.empty?
-    return [400, 'cannot save ssl certificate without ssl key']
-  end
-  if !ssl_cert.empty? and ssl_key.empty?
-    return [400, 'cannot save ssl key without ssl certificate']
-  end
-  if !ssl_cert.empty? and !ssl_key.empty?
-    ssl_errors = verify_cert_key_pair(ssl_cert, ssl_key)
-    if ssl_errors and !ssl_errors.empty?
-      return [400, ssl_errors.join('; ')]
-    end
-    begin
-      write_file_lock(CRT_FILE, 0600, ssl_cert)
-      write_file_lock(KEY_FILE, 0600, ssl_key)
-    rescue => e
-      # clean the files if we ended in the middle
-      # the files will be regenerated on next pcsd start
-      FileUtils.rm(CRT_FILE, :force => true)
-      FileUtils.rm(KEY_FILE, :force => true)
-      return [400, "cannot save ssl files: #{e}"]
-    end
-  end
-
-  return [200, 'success']
 end
 
 def remote_pacemaker_node_status(params, request, auth_user)

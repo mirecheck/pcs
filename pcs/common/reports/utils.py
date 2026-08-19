@@ -12,8 +12,6 @@ _file_role_translation = {
     file_type_codes.PCS_DR_CONFIG: "disaster-recovery configuration",
     file_type_codes.PACEMAKER_AUTHKEY: "Pacemaker authkey",
     file_type_codes.PCSD_ENVIRONMENT_CONFIG: "pcsd configuration",
-    file_type_codes.PCSD_SSL_CERT: "pcsd SSL certificate",
-    file_type_codes.PCSD_SSL_KEY: "pcsd SSL key",
     file_type_codes.PCS_CFGSYNC_CTL: "Config synchronization configuration",
     file_type_codes.PCS_KNOWN_HOSTS: "known-hosts",
     file_type_codes.PCS_SETTINGS_CONF: "pcs configuration",

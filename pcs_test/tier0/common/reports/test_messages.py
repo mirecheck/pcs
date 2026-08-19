@@ -3653,23 +3653,23 @@ class FileIoError(NameBuildTest):
 
     def test_all(self):
         self.assert_message_from_report(
-            "Unable to read pcsd SSL certificate '/ssl/cert/path': Failed",
+            "Unable to read Pacemaker authkey '/authkey/path': Failed",
             reports.FileIoError(
-                file_type_codes.PCSD_SSL_CERT,
+                file_type_codes.PACEMAKER_AUTHKEY,
                 RawFileError.ACTION_READ,
                 "Failed",
-                file_path="/ssl/cert/path",
+                file_path="/authkey/path",
             ),
         )
 
     def test_role_translation_a(self):
         self.assert_message_from_report(
-            "Unable to write pcsd SSL key '/ssl/key/path': Failed",
+            "Unable to write Booth key '/booth/key/path': Failed",
             reports.FileIoError(
-                file_type_codes.PCSD_SSL_KEY,
+                file_type_codes.BOOTH_KEY,
                 RawFileError.ACTION_WRITE,
                 "Failed",
-                file_path="/ssl/key/path",
+                file_path="/booth/key/path",
             ),
         )
 
@@ -4363,30 +4363,6 @@ class PcsdVersionTooOld(NameBuildTest):
                 "it is unable to perform the action"
             ),
             reports.PcsdVersionTooOld("node1"),
-        )
-
-
-class PcsdSslCertAndKeyDistributionStarted(NameBuildTest):
-    def test_multiple_nodes(self):
-        self.assert_message_from_report(
-            "Synchronizing pcsd SSL certificates on node(s) 'node1', 'node2', "
-            "'node3'...",
-            reports.PcsdSslCertAndKeyDistributionStarted(
-                ["node1", "node3", "node2"]
-            ),
-        )
-
-    def test_single_node(self):
-        self.assert_message_from_report(
-            "Synchronizing pcsd SSL certificates on node(s) 'node3'...",
-            reports.PcsdSslCertAndKeyDistributionStarted(["node3"]),
-        )
-
-
-class PcsdSslCertAndKeySetSuccess(NameBuildTest):
-    def test_success(self):
-        self.assert_message_from_report(
-            "node1: Success", reports.PcsdSslCertAndKeySetSuccess("node1")
         )
 
 

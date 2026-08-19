@@ -363,7 +363,7 @@ class ConfigFetcherTest(TestCase):
     ):
         mock_run.return_value = GetConfigsResult(
             True,
-            {file_type_codes.PCSD_SSL_CERT: [ConfigInfo("NODE", "")]},
+            {file_type_codes.PACEMAKER_AUTHKEY: [ConfigInfo("NODE", "")]},
         )
         configs, was_successful = self.fetcher.fetch(
             "test", [RequestTarget("NODE")]

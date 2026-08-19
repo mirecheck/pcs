@@ -2,13 +2,12 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from pcs import settings
-from pcs.common import reports, ssl
+from pcs.common import reports
 from pcs.lib import node_communication_format
 from pcs.lib.commands.cluster.setup_utils import (
     get_addrs_defaulter,
     get_validated_wait_timeout,
     host_check_cluster_setup,
-    is_ssl_cert_sync_enabled,
     normalize_dict,
     set_defaults_in_dict,
     start_cluster,
@@ -20,7 +19,6 @@ from pcs.lib.communication.nodes import (
     EnableCluster,
     GetHostInfo,
     RemoveFilesWithoutForces,
-    SendPcsdSslCertAndKey,
     UpdateKnownHosts,
 )
 from pcs.lib.communication.tools import AllSameDataMixin, run_and_raise
@@ -77,8 +75,8 @@ def setup(  # noqa:  PLR0913, PLR0915
         If int wait set timeout to int value of seconds.
     start -- if True start cluster when it is set up
     enable -- if True enable cluster when it is set up
-    no_keys_sync -- if True do not create and distribute files: pcsd ssl
-        cert and key, pacemaker authkey, corosync authkey
+    no_keys_sync -- if True do not create and distribute corosync and
+        pacemaker authkey files
     no_cluster_uuid -- if True, do not generate a unique cluster UUID into
         the 'totem' section of corosync.conf
     force_flags -- list of flags codes
@@ -169,10 +167,6 @@ def setup(  # noqa:  PLR0913, PLR0915
         )
     )
 
-    # If there is an error reading the file, this will report it and exit
-    # safely before any change is made to the nodes.
-    sync_ssl_certs = is_ssl_cert_sync_enabled(report_processor)
-
     if report_processor.has_errors:
         raise LibraryError()
 
@@ -224,28 +218,6 @@ def setup(  # noqa:  PLR0913, PLR0915
         com_cmd = DistributeFilesWithoutForces(env.report_processor, actions)
         com_cmd.set_targets(target_list)
         run_and_raise(env.get_node_communicator(), com_cmd)
-
-        # Distribute and reload pcsd SSL certificate
-        if sync_ssl_certs:
-            report_processor.report(
-                reports.ReportItem.info(
-                    reports.messages.PcsdSslCertAndKeyDistributionStarted(
-                        sorted([target.label for target in target_list])
-                    )
-                )
-            )
-            # Local certificate and key cannot be used because the local node
-            # may not be a part of the new cluster at all.
-            ssl_key_raw = ssl.generate_key()
-            ssl_key = ssl.dump_key(ssl_key_raw)
-            ssl_cert = ssl.dump_cert(
-                ssl.generate_cert(ssl_key_raw, target_list[0].label)
-            )
-            com_cmd = SendPcsdSslCertAndKey(
-                env.report_processor, ssl_cert, ssl_key
-            )
-            com_cmd.set_targets(target_list)
-            run_and_raise(env.get_node_communicator(), com_cmd)
 
     # Create and distribute corosync.conf. Once a node saves corosync.conf it
     # is considered to be in a cluster.

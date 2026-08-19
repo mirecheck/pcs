@@ -1662,8 +1662,8 @@ def cluster_setup(lib: Any, argv: Argv, modifiers: InputModifiers) -> None:
       * --enable - enable cluster
       * --force - some validation issues and unresolvable addresses are treated
         as warnings
-      * --no-keys-sync - do not create and distribute pcsd ssl cert and key,
-        corosync and pacemaker authkeys
+      * --no-keys-sync - do not create and distribute corosync and pacemaker
+        authkeys
       * --no-cluster-uuid - do not generate a cluster UUID during setup
       * --corosync_conf - corosync.conf file path, do not talk to cluster nodes
       * --overwrite - allow overwriting existing files

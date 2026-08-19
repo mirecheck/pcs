@@ -5934,39 +5934,6 @@ class PcsdVersionTooOld(ReportItemMessage):
 
 
 @dataclass(frozen=True)
-class PcsdSslCertAndKeyDistributionStarted(ReportItemMessage):
-    """
-    We are about to distribute pcsd SSL certificate and key to nodes
-
-    node_name_list -- node names to distribute to
-    """
-
-    node_name_list: list[str]
-    _code = codes.PCSD_SSL_CERT_AND_KEY_DISTRIBUTION_STARTED
-
-    @property
-    def message(self) -> str:
-        nodes = format_list(self.node_name_list)
-        return f"Synchronizing pcsd SSL certificates on node(s) {nodes}..."
-
-
-@dataclass(frozen=True)
-class PcsdSslCertAndKeySetSuccess(ReportItemMessage):
-    """
-    Pcsd SSL certificate and key have been successfully saved on a node
-
-    node -- node name
-    """
-
-    node: str
-    _code = codes.PCSD_SSL_CERT_AND_KEY_SET_SUCCESS
-
-    @property
-    def message(self) -> str:
-        return f"{self.node}: Success"
-
-
-@dataclass(frozen=True)
 class ClusterWillBeDestroyed(ReportItemMessage):
     """
     If the user continues with force, cluster will be destroyed on some hosts

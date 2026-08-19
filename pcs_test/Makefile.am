@@ -368,7 +368,6 @@ EXTRA_DIST		= \
 			  tier0/lib/commands/test_fencing_topology.py \
 			  tier0/lib/commands/test_node.py \
 			  tier0/lib/commands/test_pcs_cfgsync.py \
-			  tier0/lib/commands/test_pcsd.py \
 			  tier0/lib/commands/test_qdevice.py \
 			  tier0/lib/commands/test_quorum.py \
 			  tier0/lib/commands/test_resource_agent.py \

@@ -1,15 +1,11 @@
-import contextlib
 import json
-import os
 import sys
 from typing import Any, cast
 
-import pcs.common.ssl
 from pcs import settings, utils
 from pcs.cli.common.errors import CmdLineInputError
 from pcs.cli.common.parse_args import Argv, InputModifiers
 from pcs.cli.reports import output, process_library_reports
-from pcs.cli.reports.output import deprecation_warning, print_to_stderr
 from pcs.common import file as pcs_file
 from pcs.common import reports
 from pcs.common.reports.item import ReportItem
@@ -20,100 +16,6 @@ from pcs.lib.file.json import JsonParserException
 from pcs.lib.file.raw_file import raw_file_error_report
 from pcs.lib.interface.config import ParserErrorException
 from pcs.lib.node import get_existing_nodes_names
-
-
-def pcsd_certkey_cmd(lib: Any, argv: Argv, modifiers: InputModifiers):
-    """
-    Options:
-      * --force - overwrite existing file
-    """
-    del lib
-    # deprecated after pcs-0.12.2, to be removed
-    deprecation_warning(
-        "This command is deprecated and might be removed in a future release"
-    )
-    modifiers.ensure_only_supported("--force")
-    if len(argv) != 2:
-        raise CmdLineInputError()
-
-    certfile = argv[0]
-    keyfile = argv[1]
-
-    try:
-        with open(certfile, "rb") as myfile:
-            cert = myfile.read()
-        with open(keyfile, "rb") as myfile:
-            key = myfile.read()
-    except OSError as e:
-        utils.err(str(e))
-    errors = pcs.common.ssl.check_cert_key(certfile, keyfile)
-    if errors:
-        for err in errors:
-            utils.err(err, False)
-        sys.exit(1)
-
-    if not modifiers.get("--force") and (
-        os.path.exists(settings.pcsd_cert_location)
-        or os.path.exists(settings.pcsd_key_location)
-    ):
-        utils.err(
-            "certificate and/or key already exists, use --force to overwrite"
-        )
-
-    try:
-        # If the file doesn't exist, we don't care
-        with contextlib.suppress(OSError):
-            os.chmod(settings.pcsd_cert_location, 0o600)
-
-        # If the file doesn't exist, we don't care
-        with contextlib.suppress(OSError):
-            os.chmod(settings.pcsd_key_location, 0o600)
-
-        with os.fdopen(
-            os.open(
-                settings.pcsd_cert_location,
-                os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
-                0o600,
-            ),
-            "wb",
-        ) as myfile:
-            myfile.write(cert)
-
-        with os.fdopen(
-            os.open(
-                settings.pcsd_key_location,
-                os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
-                0o600,
-            ),
-            "wb",
-        ) as myfile:
-            myfile.write(key)
-
-    except OSError as e:
-        utils.err(str(e))
-
-    print_to_stderr(
-        "Certificate and key updated, you may need to restart pcsd for new "
-        "settings to take effect"
-    )
-
-
-def pcsd_sync_certs(lib, argv, modifiers):
-    """
-    Options:
-      * --skip-offline - skip offline nodes
-    """
-    # deprecated after pcs-0.12.2, to be removed
-    # also remove this command and deprecation from app.py
-    deprecation_warning(
-        "This command is deprecated and might be removed in a future release"
-    )
-    modifiers.ensure_only_supported("--skip-offline")
-    if argv:
-        raise CmdLineInputError()
-    lib.pcsd.synchronize_ssl_certificate(
-        skip_offline=modifiers.get("--skip-offline")
-    )
 
 
 def pcsd_deauth(lib, argv, modifiers):

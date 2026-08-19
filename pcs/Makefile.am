@@ -371,7 +371,6 @@ EXTRA_DIST		= \
 			  lib/commands/manage_clusters.py \
 			  lib/commands/node.py \
 			  lib/commands/pcs_cfgsync.py \
-			  lib/commands/pcsd.py \
 			  lib/commands/qdevice.py \
 			  lib/commands/quorum.py \
 			  lib/commands/remote_node.py \

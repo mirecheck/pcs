@@ -9,6 +9,10 @@
   `pcs stonith sbd watchdog test`. Use `--yes` instead.
 - The deprecated `--force` flag is no longer accepted as an alternative to
   `--overwrite` in command `pcs cluster report`. Use `--overwrite` instead.
+- Commands `pcs cluster certkey`, `pcs pcsd certkey` and `pcs pcsd
+  sync-certificates`
+- Automatic synchronization of pcsd SSL certificates during `pcs cluster setup`
+  and `pcs cluster node add`
 
 ### Fixed
 - Command `pcs stonith update-scsi-devices` no longer triggers unnecessary
